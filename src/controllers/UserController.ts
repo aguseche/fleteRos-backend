@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-// import md5 from 'md5';
-import { getCustomRepository } from 'typeorm';
+import { getCustomRepository, getRepository } from 'typeorm';
+import md5 from 'md5';
+import jwt from 'jsonwebtoken';
+import passport from 'passport';
 
 import UserRepository from '../repositories/UserRepository';
 import User from '../entities/User';
@@ -10,25 +12,18 @@ class UserController {
     // constructor() {
     //     this.userRepository = getCustomRepository(UserRepository);
     // }
-    public async getUsers(req: Request, res: Response): Promise<Response> {
-        try {
-            const userRepository = getCustomRepository(UserRepository); //hacer un unico parametro general
-            const users = await userRepository.find();
-            return res.status(200).json(users);
-        } catch (error) {
-            console.log(error);
-            return res.status(500).json(error);
-        }
+    private static createToken(user: User) {
+        return jwt.sign(
+            { id: user.id, username: user.email },
+            process.env.JWTSECRET
+                ? process.env.JWTSECRET
+                : 'BNR8SM&dKn6cIUA#dP%7sF&$oErml5xb',
+            {
+                expiresIn: process.env.TOKEN_EXPIRATION_TIME // 1 dia
+            }
+        );
     }
-    public async getUser(req: Request, res: Response): Promise<Response> {
-        try {
-            const userRepository = getCustomRepository(UserRepository); //hacer un unico parametro general
-            const user = await userRepository.findByEmail(req.body.email);
-            return res.status(200).json(user);
-        } catch (error) {
-            return res.status(500).json(error);
-        }
-    }
+
     public async signUp(req: Request, res: Response): Promise<Response> {
         const userRepository = getCustomRepository(UserRepository); //hacer un unico parametro general
         if (!req.body.email || !req.body.password) {
@@ -43,20 +38,50 @@ class UserController {
             if (user) {
                 return res.status(400).json({ error: 'Email already exists' });
             }
-            const newUser = new User({ ...req.body });
+            const newUser = await getRepository(User).create(req.body);
             await userRepository.save(newUser);
-            newUser.password = '';
+            newUser.password = ''; //no se porque me tira error pero funciona ... por ahi hay que hacer una IUser
             return res.status(201).json(newUser);
         } catch (error) {
             return res.status(500).json(error);
         }
     }
-    public async signIn(req: Request, res: Response): Promise<Response> {
-        return res.status(200);
-    }
-    public async signOut(req: Request, res: Response): Promise<Response> {
-        return res.status(200);
-    }
+    public signIn = async (req: Request, res: Response): Promise<Response> => {
+        const userRepository = getCustomRepository(UserRepository); //hacer un unico parametro general
+
+        if (!req.body.email || !req.body.password) {
+            return res
+                .status(400)
+                .json({ error: 'Email and Password required' });
+        }
+        try {
+            const user = await userRepository.authenticate(
+                req.body.email,
+                md5(req.body.password)
+            );
+
+            if (user) {
+                user.password = '';
+                const token = UserController.createToken(user);
+                return res.status(200).json({ user, token });
+            }
+
+            return res
+                .status(400)
+                .json({ error: 'Email or password incorrect' });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json(error);
+        }
+    };
+    public signOut = (req: Request, res: Response): Response => {
+        req.logOut();
+        return res.status(200).json({ msg: 'success' });
+    };
+
+    public getMe = (req: Request, res: Response): Response => {
+        return res.status(200).json(req.user);
+    };
 }
 
 export default UserController;

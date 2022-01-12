@@ -3,18 +3,13 @@ import {
     BeforeInsert,
     BeforeUpdate,
     Column,
+    CreateDateColumn,
     Entity,
     PrimaryGeneratedColumn
 } from 'typeorm';
 
 @Entity({ name: 'users' })
 export default class User {
-    constructor(password?: string, email?: string) {
-        if (password !== undefined && email !== undefined) {
-            this.password = password;
-            this.email = email;
-        }
-    }
     @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
     id: number;
 
@@ -53,9 +48,6 @@ export default class User {
     @Column('timestamp', { name: 'birthDate' })
     birthDate: Date;
 
-    @Column('timestamp', {
-        name: 'registrationDate',
-        default: () => 'CURRENT_TIMESTAMP'
-    })
-    registrationDate: Date;
+    @CreateDateColumn({ name: 'registrationDate', type: 'timestamp' })
+    registrationDate!: Date;
 }
