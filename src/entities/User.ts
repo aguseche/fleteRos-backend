@@ -10,6 +10,13 @@ import {
 
 @Entity({ name: 'users' })
 export default class User {
+    constructor(password?: string, email?: string, ...args: any) {
+        if (password !== undefined && email !== undefined) {
+            this.password = password;
+            this.email = email;
+        }
+    }
+
     @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
     id: number;
 
