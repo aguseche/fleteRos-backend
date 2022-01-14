@@ -38,10 +38,10 @@ class UserController {
                 return res.status(400).json({ error: 'Email already exists' });
             }
 
-            const newUser = await getRepository(User).create(req.body);
+            let newUser = new User();
+            newUser = req.body;
             await this.userRepository.save(newUser);
-            newUser.password = ''; 
-
+            newUser.password = '';
             return res.status(201).json(newUser);
         } catch (error) {
             return res.status(500).json(error);
