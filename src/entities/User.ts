@@ -19,7 +19,11 @@ export default class User {
     @Column('varchar', { name: 'lastname', length: 50 })
     lastname: string | null;
 
-    @Column('varchar', { name: 'email', unique: true, length: 150 })
+    @Column('varchar', {
+        name: 'email',
+        unique: true,
+        length: 150
+    })
     email: string | null;
 
     @Column('varchar', { name: 'phone', nullable: true, length: 20 })
@@ -27,9 +31,7 @@ export default class User {
 
     @Column('varchar', {
         name: 'gender',
-        length: 20,
-        // eslint-disable-next-line quotes
-        default: () => "'Not Revealed'"
+        length: 20
     })
     gender: string;
 
@@ -44,7 +46,6 @@ export default class User {
             this.password = md5(this.password);
         }
     }
-
     @Column('timestamp', { name: 'birthDate' })
     birthDate: Date;
 
