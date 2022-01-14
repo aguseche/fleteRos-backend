@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { getCustomRepository, getRepository } from 'typeorm';
 import md5 from 'md5';
 import jwt from 'jsonwebtoken';
-import passport from 'passport';
 
 import UserRepository from '../repositories/UserRepository';
 import User from '../entities/User';
@@ -12,6 +11,7 @@ class UserController {
     constructor() {
         this.userRepository = getCustomRepository(UserRepository);
     }
+
     private static createToken(user: User) {
         return jwt.sign(
             { id: user.id, username: user.email },
@@ -37,14 +37,16 @@ class UserController {
             if (user) {
                 return res.status(400).json({ error: 'Email already exists' });
             }
+
             const newUser = await getRepository(User).create(req.body);
             await this.userRepository.save(newUser);
-            newUser.password = ''; //no se porque me tira error pero funciona ... por ahi hay que hacer una IUser
+            newUser.password = ''; 
+
             return res.status(201).json(newUser);
         } catch (error) {
             return res.status(500).json(error);
         }
-    }
+    };
     public signIn = async (req: Request, res: Response): Promise<Response> => {
         if (!req.body.email || !req.body.password) {
             return res
@@ -72,7 +74,7 @@ class UserController {
         }
     };
     public signOut = (req: Request, res: Response): Response => {
-        req.logOut();
+        req.logout();
         return res.status(200).json({ msg: 'success' });
     };
 

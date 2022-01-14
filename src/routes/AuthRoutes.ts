@@ -9,7 +9,11 @@ class AuthRouter {
     constructor() {
         this.router.post('/auth/signup', this.userController.signUp);
         this.router.post('/auth/signin', this.userController.signIn);
-        this.router.post('/auth/signout', this.userController.signOut);
+        this.router.get(
+            '/auth/signout',
+            passport.authenticate('jwt', { session: false }),
+            this.userController.signOut
+        );
         this.router.get(
             '/auth/me',
             passport.authenticate('jwt', { session: false }),
