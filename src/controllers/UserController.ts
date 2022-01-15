@@ -7,10 +7,7 @@ import UserRepository from '../repositories/UserRepository';
 import User from '../entities/User';
 
 class UserController {
-    private userRepository;
-    constructor() {
-        this.userRepository = getCustomRepository(UserRepository);
-    }
+    private userRepository = getCustomRepository(UserRepository);
 
     private static createToken(user: User) {
         return jwt.sign(
