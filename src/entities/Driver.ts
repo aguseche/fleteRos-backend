@@ -1,5 +1,5 @@
-import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
-import Shipment from './Shipment';
+import { Column, Entity, OneToMany } from 'typeorm';
+import Offer from './Offer';
 import User from './User';
 import Vehicle from './Vehicle';
 @Entity({ name: 'drivers' })
@@ -11,9 +11,9 @@ export default class Driver extends User {
     greenCard: string | null;
 
     //Relationships
-    @ManyToOne(() => Vehicle, vehicle => vehicle.drivers)
-    vehicle: Vehicle;
+    @OneToMany(() => Vehicle, vehicle => vehicle.driver)
+    vehicles: Vehicle[];
 
-    @OneToMany(() => Shipment, shipment => shipment.driver)
-    shipments: Shipment[];
+    @OneToMany(() => Offer, offer => offer.driver)
+    offers: Offer[];
 }
