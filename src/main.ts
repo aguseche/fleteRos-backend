@@ -3,7 +3,7 @@ import express from 'express';
 import morgan from 'morgan';
 import dotenv from 'dotenv-flow';
 import bodyParser from 'body-parser';
-import { AuthRoutes } from './routes';
+import { AuthRoutes, DriverRoutes } from './routes';
 import 'reflect-metadata';
 import cors from 'cors';
 import passport from 'passport';
@@ -25,6 +25,8 @@ async function init() {
         passport.use(passportMiddleware);
         // routes
         app.use(new AuthRoutes().router);
+        app.use(new DriverRoutes().router);
+
         // app
         app.listen(app.get('port'), () => {
             console.log(`Listening on port ${app.get('port')}`);

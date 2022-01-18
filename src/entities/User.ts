@@ -5,8 +5,10 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn
 } from 'typeorm';
+import Shipment from './Shipment';
 
 @Entity({ name: 'users' })
 export default class User {
@@ -51,4 +53,8 @@ export default class User {
 
     @CreateDateColumn({ name: 'registrationDate', type: 'timestamp' })
     registrationDate!: Date;
+
+    //Relationships
+    @OneToMany(() => Shipment, shipment => shipment.user)
+    shipments: Shipment[];
 }
