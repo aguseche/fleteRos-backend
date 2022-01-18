@@ -3,15 +3,15 @@ import { getCustomRepository } from 'typeorm';
 import md5 from 'md5';
 import jwt from 'jsonwebtoken';
 
-import UserRepository from '../repositories/UserRepository';
-import User from '../entities/User';
+import DriverRepository from '../repositories/DriverRepository';
+import Driver from '../entities/Driver';
 
-class UserController {
-    private userRepository = getCustomRepository(UserRepository);
+class DriverController {
+    private driverRepository = getCustomRepository(DriverRepository);
 
-    private static createToken(user: User) {
+    private static createToken(driver: Driver) {
         return jwt.sign(
-            { id: user.id, username: user.email },
+            { id: driver.id, username: driver.email },
             process.env.JWTSECRET
                 ? process.env.JWTSECRET
                 : 'BNR8SM&dKn6cIUA#dP%7sF&$oErml5xb',
@@ -29,17 +29,19 @@ class UserController {
         }
 
         try {
-            const user = await this.userRepository.findByEmail(req.body.email);
+            const driver = await this.driverRepository.findByEmail(
+                req.body.email
+            );
 
-            if (user) {
+            if (driver) {
                 return res.status(400).json({ error: 'Email already exists' });
             }
 
-            let newUser = new User();
-            newUser = req.body;
-            await this.userRepository.save(newUser);
-            newUser.password = '';
-            return res.status(201).json(newUser);
+            let newDriver = new Driver();
+            newDriver = req.body;
+            await this.driverRepository.save(newDriver);
+            newDriver.password = '';
+            return res.status(201).json(newDriver);
         } catch (error) {
             return res.status(500).json(error);
         }
@@ -51,15 +53,15 @@ class UserController {
                 .json({ error: 'Email and Password required' });
         }
         try {
-            const user = await this.userRepository.authenticate(
+            const driver = await this.driverRepository.authenticate(
                 req.body.email,
                 md5(req.body.password)
             );
 
-            if (user) {
-                user.password = '';
-                const token = UserController.createToken(user);
-                return res.status(200).json({ user, token });
+            if (driver) {
+                driver.password = '';
+                const token = DriverController.createToken(driver);
+                return res.status(200).json({ driver, token });
             }
 
             return res
@@ -80,4 +82,4 @@ class UserController {
     };
 }
 
-export default UserController;
+export default DriverController;
