@@ -8,10 +8,13 @@ import {
 
 import Shipment from './Shipment';
 
-@Entity({ name: 'item' })
+@Entity({ name: 'items' })
 export default class Item {
     @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
     id: number;
+
+    @Column({ name: 'description', length: 100 })
+    description: string;
 
     @Column('decimal', { name: 'weight', precision: 10, scale: 2 })
     weight: number;
@@ -25,7 +28,7 @@ export default class Item {
     @Column({ name: 'image_2', length: 50 })
     image_2: string;
 
-    @ManyToOne(() => Shipment)
-    @JoinColumn({ name: 'shipments', referencedColumnName: 'id' })
+    @ManyToOne(() => Shipment, shipment => shipment.items)
+    @JoinColumn({ name: 'idShipment', referencedColumnName: 'id' })
     shipment: Shipment;
 }

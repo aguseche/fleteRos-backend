@@ -11,7 +11,7 @@ import Item from './Item';
 import Offer from './Offer';
 import User from './User';
 
-@Entity({ name: 'shipment' })
+@Entity({ name: 'shipments' })
 export default class Shipment {
     @PrimaryGeneratedColumn({ type: 'int', name: 'id' })
     id: number;
@@ -33,11 +33,11 @@ export default class Shipment {
 
     //Relationships
     @ManyToOne(() => User)
-    @JoinColumn({ name: 'users', referencedColumnName: 'id' })
+    @JoinColumn({ name: 'idUser', referencedColumnName: 'id' })
     user: User;
 
     @OneToMany(() => Item, item => item.shipment)
-    items: Item[];
+    items: Array<Item>;
 
     @OneToMany(() => Offer, offer => offer.shipment)
     offers: Offer[];

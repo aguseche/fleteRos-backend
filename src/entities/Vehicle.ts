@@ -11,6 +11,6 @@ export default class Vehicle {
 
     //Relationships
     @ManyToOne(() => Driver, driver => driver.vehicles)
-    @JoinColumn({ name: 'drivers', referencedColumnName: 'id' })
+    @JoinColumn({ name: 'idDriver', referencedColumnName: 'id' })
     driver: Driver;
 }

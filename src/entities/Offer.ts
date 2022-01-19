@@ -28,10 +28,10 @@ export default class Offer {
 
     //Relationships
     @ManyToOne(() => Driver)
-    @JoinColumn({ name: 'drivers', referencedColumnName: 'id' })
+    @JoinColumn({ name: 'idDriver', referencedColumnName: 'id' })
     driver: Driver;
 
     @ManyToOne(() => Shipment)
-    @JoinColumn({ name: 'shipments', referencedColumnName: 'id' })
+    @JoinColumn({ name: 'idShipment', referencedColumnName: 'id' })
     shipment: Shipment;
 }
