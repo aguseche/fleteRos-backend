@@ -21,6 +21,10 @@ export default class Shipment {
     receipt: string;
     @Column({ name: 'state', length: 45 })
     state: string;
+    @Column({ name: 'locationFrom', length: 100 })
+    locationFrom: string;
+    @Column({ name: 'locationTo', length: 100 })
+    locationTo: string;
     //Dates
     @Column('timestamp', { name: 'shipDate' })
     shipDate: Date;

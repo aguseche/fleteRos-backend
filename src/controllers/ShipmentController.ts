@@ -32,6 +32,8 @@ class ShipmentController {
         shipment.user = user;
         shipment.state = 'Waiting Offers';
         shipment.shipDate = req.body.shipment.shipDate;
+        shipment.locationFrom = req.body.shipment.locationFrom;
+        shipment.locationTo = req.body.shipment.locationTo;
         const items: Item[] = [];
         interfaceitems.forEach(
             ({ description, weight, size, image_1, image_2 }) => {
