@@ -8,15 +8,16 @@ export default class ShipmentRepository extends Repository<Shipment> {
     async registerShipment(shipment: Shipment, items: Item[]): Promise<void> {
         return this.manager.transaction(async transactionalManager => {
             const insertShipment = await transactionalManager.save(shipment);
-            try {
-                items.forEach(is => {
-                    is.shipment = insertShipment;
-                });
-            } catch (error) {
-                console.log(error);
-            }
-
+            items.forEach(is => {
+                is.shipment = insertShipment;
+            });
             await transactionalManager.save(items);
         });
+    }
+    async getValidShipments(): Promise<Shipment[] | undefined> {
+        return this.createQueryBuilder()
+            .where('shipDate >= NOW()')
+            .andWhere('confirmationDate is null')
+            .getMany();
     }
 }

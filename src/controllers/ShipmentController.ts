@@ -53,6 +53,16 @@ class ShipmentController {
             return res.status(500).json(error);
         }
     };
+    public getValidShipments = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        if (!req.user) {
+            return res.status(403).json('Unauthorized');
+        }
+        const shipments = await this.shipmentRepository.getValidShipments();
+        return res.status(200).json(shipments);
+    };
 }
 
 export default ShipmentController;

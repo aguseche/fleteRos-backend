@@ -12,6 +12,11 @@ class ShipmentRoutes {
             passport.authenticate('jwt', { session: false }),
             this.shipmentController.registerShipment
         );
+        this.router.get(
+            '/shipment/getValidShipments',
+            passport.authenticate('jwt', { session: false }),
+            this.shipmentController.getValidShipments
+        );
     }
 }
 
