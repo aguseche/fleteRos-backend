@@ -10,6 +10,7 @@ interface IItem {
     description: string;
     weight: number;
     size: string;
+    quantity: number;
     image_1: string;
     image_2: string;
 }
@@ -36,11 +37,12 @@ class ShipmentController {
         shipment.locationTo = req.body.shipment.locationTo;
         const items: Item[] = [];
         interfaceitems.forEach(
-            ({ description, weight, size, image_1, image_2 }) => {
+            ({ description, weight, size, quantity, image_1, image_2 }) => {
                 const newItem = new Item();
                 newItem.description = description;
                 newItem.weight = weight;
                 newItem.size = size;
+                newItem.quantity = quantity;
                 newItem.image_1 = image_1;
                 newItem.image_2 = image_2;
                 items.push(newItem);

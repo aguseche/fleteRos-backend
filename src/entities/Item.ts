@@ -22,6 +22,9 @@ export default class Item {
     @Column({ name: 'size', length: 50 })
     size: string;
 
+    @Column({ type: 'int', name: 'quantity' })
+    quantity: number;
+
     @Column({ name: 'image_1', length: 50 })
     image_1: string;
 
