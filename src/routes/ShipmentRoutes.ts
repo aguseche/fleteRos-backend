@@ -17,6 +17,11 @@ class ShipmentRoutes {
             passport.authenticate('jwt', { session: false }),
             this.shipmentController.getValidShipments
         );
+        this.router.put(
+            '/shipment/update/:id',
+            passport.authenticate('jwt', { session: false }),
+            this.shipmentController.updateShipment
+        );
     }
 }
 

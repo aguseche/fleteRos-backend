@@ -68,6 +68,23 @@ class ShipmentController {
         }
         return res.status(200).json(shipments);
     };
+
+    public updateShipment = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const oldShipment = await this.shipmentRepository.findOne(
+            req.params.id
+        );
+        if (oldShipment) {
+            this.shipmentRepository.merge(oldShipment, req.body);
+            const updatedShipment = await this.shipmentRepository.save(
+                oldShipment
+            );
+            return res.status(200).json(updatedShipment);
+        }
+        return res.status(200).json('Invalid shipment id');
+    };
 }
 
 export default ShipmentController;
