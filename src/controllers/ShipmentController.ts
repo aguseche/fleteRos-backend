@@ -63,6 +63,9 @@ class ShipmentController {
             return res.status(403).json('Unauthorized');
         }
         const shipments = await this.shipmentRepository.getValidShipments();
+        if (shipments === undefined) {
+            return res.status(200).json('No shipments available');
+        }
         return res.status(200).json(shipments);
     };
 }

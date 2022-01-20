@@ -1,4 +1,4 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { EntityRepository, IsNull, MoreThanOrEqual, Repository } from 'typeorm';
 
 import Shipment from '../entities/Shipment';
 import Item from '../entities/Item';
@@ -15,9 +15,12 @@ export default class ShipmentRepository extends Repository<Shipment> {
         });
     }
     async getValidShipments(): Promise<Shipment[] | undefined> {
-        return this.createQueryBuilder()
-            .where('shipDate >= NOW()')
-            .andWhere('confirmationDate is null')
-            .getMany();
+        return this.find({
+            relations: ['items'],
+            where: {
+                shipDate: MoreThanOrEqual(Date.now()),
+                confirmationDate: IsNull()
+            }
+        });
     }
 }
