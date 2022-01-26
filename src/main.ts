@@ -23,6 +23,7 @@ async function init() {
         app.use(bodyParser.urlencoded({ extended: true }));
         app.use(passport.initialize());
         passport.use(passportMiddleware);
+
         // routes
         app.use(new AuthRoutes().router);
         app.use(new DriverRoutes().router);
@@ -36,5 +37,4 @@ async function init() {
         console.log(e);
     }
 }
-
 init();

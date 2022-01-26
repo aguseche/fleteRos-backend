@@ -31,7 +31,10 @@ export default class Item {
     @Column({ name: 'image_2', length: 50 })
     image_2: string;
 
-    @ManyToOne(() => Shipment, shipment => shipment.items)
+    @ManyToOne(() => Shipment, {
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
+    })
     @JoinColumn({ name: 'idShipment', referencedColumnName: 'id' })
     shipment: Shipment;
 }

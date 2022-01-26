@@ -27,11 +27,17 @@ export default class Offer {
     confirmed: boolean;
 
     //Relationships
-    @ManyToOne(() => Driver)
+    @ManyToOne(() => Driver, {
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
+    })
     @JoinColumn({ name: 'idDriver', referencedColumnName: 'id' })
     driver: Driver;
 
-    @ManyToOne(() => Shipment)
+    @ManyToOne(() => Shipment, {
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
+    })
     @JoinColumn({ name: 'idShipment', referencedColumnName: 'id' })
     shipment: Shipment;
 }

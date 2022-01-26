@@ -2,7 +2,7 @@ import { EntityRepository, Repository } from 'typeorm';
 import Driver from '../entities/Driver';
 
 @EntityRepository(Driver)
-export default class userRepository extends Repository<Driver> {
+export default class driverRepository extends Repository<Driver> {
     findByEmail(email: string): Promise<Driver | undefined> {
         return this.findOne({ email });
     }

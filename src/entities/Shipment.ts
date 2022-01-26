@@ -36,7 +36,10 @@ export default class Shipment {
     registrationDate!: Date;
 
     //Relationships
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, {
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
+    })
     @JoinColumn({ name: 'idUser', referencedColumnName: 'id' })
     user: User;
 

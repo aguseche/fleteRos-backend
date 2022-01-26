@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import passport from 'passport';
 import UserController from '../controllers/UserController';
+import { user_validation } from '../middlewares/route_validator';
 
 class AuthRouter {
     public router: Router = Router();
@@ -12,11 +13,13 @@ class AuthRouter {
         this.router.get(
             '/auth/signout',
             passport.authenticate('jwt', { session: false }),
+            user_validation,
             this.userController.signOut
         );
         this.router.get(
             '/auth/me',
             passport.authenticate('jwt', { session: false }),
+            user_validation,
             this.userController.getMe
         );
     }
