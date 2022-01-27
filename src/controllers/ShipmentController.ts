@@ -59,9 +59,11 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
+        // esto no estaria de mas ahora ?
         if (!req.user) {
             return res.status(403).json('Unauthorized');
         }
+        /////////////////////////////////
         const shipments = await this.shipmentRepository.getValidShipments();
         if (shipments === undefined) {
             return res.status(200).json('No shipments available');
@@ -73,9 +75,12 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        const oldShipment = await this.shipmentRepository.findOne(
-            req.params.id
-        );
+        const oldShipment = await this.shipmentRepository
+            .createQueryBuilder('shipments')
+            .innerJoin('shipments.user', 'user')
+            .where('shipments.id=:id', { id: req.params.id })
+            .andWhere('user.id =:idUser', { idUser: req.user.id }) // ver como sacar este error, nunca va a ser null si pasa el auth
+            .getOne();
         if (oldShipment) {
             this.shipmentRepository.merge(oldShipment, req.body);
             const updatedShipment = await this.shipmentRepository.save(
@@ -85,6 +90,17 @@ class ShipmentController {
         }
         return res.status(200).json('Invalid shipment id');
     };
+    //Esta forma es mas linda pero devuelve tambien el user
+    // const oldShipment = await this.shipmentRepository.findOne(
+    //     req.params.id
+    // );
+    // const oldShipment = await this.shipmentRepository.findOne({
+    //     relations: ['user'],
+    //     where: {
+    //         user: req.user,
+    //         id: req.params.id
+    //     }
+    // });
 }
 
 export default ShipmentController;

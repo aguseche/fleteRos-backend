@@ -2,6 +2,7 @@ import { EntityRepository, IsNull, MoreThanOrEqual, Repository } from 'typeorm';
 
 import Shipment from '../entities/Shipment';
 import Item from '../entities/Item';
+import User from '../entities/User';
 
 @EntityRepository(Shipment)
 export default class ShipmentRepository extends Repository<Shipment> {
