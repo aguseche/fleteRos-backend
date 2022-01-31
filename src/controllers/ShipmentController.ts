@@ -75,32 +75,36 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        const oldShipment = await this.shipmentRepository
-            .createQueryBuilder('shipments')
-            .innerJoin('shipments.user', 'user')
-            .where('shipments.id=:id', { id: req.params.id })
-            .andWhere('user.id =:idUser', { idUser: req.user.id }) // ver como sacar este error, nunca va a ser null si pasa el auth
-            .getOne();
-        if (oldShipment) {
+        if (!req.user) {
+            return res.status(403).json('Unauthorized');
+        }
+        const oldShipment = await this.shipmentRepository.findOne({
+            relations: ['user'],
+            where: {
+                user: req.user,
+                id: req.params.id
+            }
+        });
+        if (!oldShipment) {
+            return res.status(403).json('Invalid shipment id');
+        }
+        try {
             this.shipmentRepository.merge(oldShipment, req.body);
             const updatedShipment = await this.shipmentRepository.save(
                 oldShipment
             );
             return res.status(200).json(updatedShipment);
+        } catch (error) {
+            return res.status(500).json(error);
         }
-        return res.status(200).json('Invalid shipment id');
     };
-    //Esta forma es mas linda pero devuelve tambien el user
-    // const oldShipment = await this.shipmentRepository.findOne(
-    //     req.params.id
-    // );
-    // const oldShipment = await this.shipmentRepository.findOne({
-    //     relations: ['user'],
-    //     where: {
-    //         user: req.user,
-    //         id: req.params.id
-    //     }
-    // });
+
+    // const oldShipment = await this.shipmentRepository
+    // .createQueryBuilder('shipments')
+    // .innerJoin('shipments.user', 'user')
+    // .where('shipments.id=:id', { id: req.params.id })
+    // .andWhere('user.id =:idUser', { idUser: req.user.id }) // ver como sacar este error, nunca va a ser null si pasa el auth
+    // .getOne();
 }
 
 export default ShipmentController;
