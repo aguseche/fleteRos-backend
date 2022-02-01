@@ -3,7 +3,12 @@ import express from 'express';
 import morgan from 'morgan';
 import dotenv from 'dotenv-flow';
 import bodyParser from 'body-parser';
-import { AuthRoutes, DriverRoutes, ShipmentRoutes } from './routes';
+import {
+    AuthRoutes,
+    DriverRoutes,
+    ShipmentRoutes,
+    OfferRoutes
+} from './routes';
 import 'reflect-metadata';
 import cors from 'cors';
 import passport from 'passport';
@@ -28,6 +33,7 @@ async function init() {
         app.use(new AuthRoutes().router);
         app.use(new DriverRoutes().router);
         app.use(new ShipmentRoutes().router);
+        app.use(new OfferRoutes().router);
 
         // app
         app.listen(app.get('port'), () => {
