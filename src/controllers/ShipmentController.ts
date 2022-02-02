@@ -21,9 +21,6 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        if (!req.user) {
-            return res.status(403).json('Unauthorized');
-        }
         if (!req.body.items) {
             return res.status(404).json('Must have at least one item');
         }
@@ -55,16 +52,11 @@ class ShipmentController {
             return res.status(500).json(error);
         }
     };
-    public getValidShipments = async (
+    public getAvailableShipments = async (
         req: Request,
         res: Response
     ): Promise<Response> => {
-        // esto no estaria de mas ahora ?
-        if (!req.user) {
-            return res.status(403).json('Unauthorized');
-        }
-        /////////////////////////////////
-        const shipments = await this.shipmentRepository.getValidShipments();
+        const shipments = await this.shipmentRepository.getAvailableShipments();
         if (shipments === undefined) {
             return res.status(200).json('No shipments available');
         }
@@ -75,36 +67,24 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        if (!req.user) {
-            return res.status(403).json('Unauthorized');
-        }
         const oldShipment = await this.shipmentRepository.findOne({
             relations: ['user'],
             where: {
                 user: req.user,
-                id: req.params.id
+                id: req.body.id
             }
         });
         if (!oldShipment) {
             return res.status(403).json('Invalid shipment id');
         }
         try {
-            this.shipmentRepository.merge(oldShipment, req.body);
-            const updatedShipment = await this.shipmentRepository.save(
-                oldShipment
-            );
-            return res.status(200).json(updatedShipment);
+            this.shipmentRepository.merge(oldShipment, req.body.shipment);
+            await this.shipmentRepository.save(oldShipment);
+            return res.status(200).json('Success');
         } catch (error) {
             return res.status(500).json(error);
         }
     };
-
-    // const oldShipment = await this.shipmentRepository
-    // .createQueryBuilder('shipments')
-    // .innerJoin('shipments.user', 'user')
-    // .where('shipments.id=:id', { id: req.params.id })
-    // .andWhere('user.id =:idUser', { idUser: req.user.id }) // ver como sacar este error, nunca va a ser null si pasa el auth
-    // .getOne();
 }
 
 export default ShipmentController;

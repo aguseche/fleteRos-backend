@@ -37,7 +37,7 @@ export default class Driver {
     })
     gender: string;
 
-    @Column('varchar', { name: 'password', length: 32 })
+    @Column('varchar', { name: 'password', length: 32, select: false })
     password: string;
 
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types

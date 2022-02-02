@@ -11,7 +11,7 @@ class OfferRoutes {
 
     constructor() {
         this.router.post(
-            '/offer/create/:id',
+            '/offer/create',
             passport.authenticate('jwt', { session: false }),
             driver_validation,
             this.offerController.registerOffer

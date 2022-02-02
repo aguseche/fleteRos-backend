@@ -14,7 +14,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
             await transactionalManager.save(items);
         });
     }
-    async getValidShipments(): Promise<Shipment[] | undefined> {
+    async getAvailableShipments(): Promise<Shipment[] | undefined> {
         return this.find({
             relations: ['items'],
             where: {

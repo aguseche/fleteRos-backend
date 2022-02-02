@@ -17,13 +17,13 @@ class ShipmentRoutes {
             this.shipmentController.registerShipment
         );
         this.router.get(
-            '/shipment/getValidShipments',
+            '/shipment/getAvailableShipments',
             passport.authenticate('jwt', { session: false }),
             driver_validation,
-            this.shipmentController.getValidShipments
+            this.shipmentController.getAvailableShipments
         );
         this.router.put(
-            '/shipment/update/:id',
+            '/shipment/update',
             passport.authenticate('jwt', { session: false }),
             user_validation,
             this.shipmentController.updateShipment

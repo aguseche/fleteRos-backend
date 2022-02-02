@@ -16,7 +16,7 @@ class OfferController {
     ): Promise<Response> => {
         const driver = req.user as Driver;
         //validar que exista el shipment
-        const shipment = await this.shipmentRepository.findOne(req.params.id);
+        const shipment = await this.shipmentRepository.findOne(req.body.id);
         if (!shipment) {
             return res.status(403).json('Invalid shipment id');
         }
