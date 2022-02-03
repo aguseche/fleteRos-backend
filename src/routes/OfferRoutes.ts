@@ -10,6 +10,11 @@ class OfferRoutes {
     private offerController = new OfferController();
 
     constructor() {
+        this.router.get(
+            '/offer/getMyOffers',
+            passport.authenticate('jwt', { session: false }),
+            this.offerController.getMyOffers
+        );
         this.router.post(
             '/offer/create',
             passport.authenticate('jwt', { session: false }),

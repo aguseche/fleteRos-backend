@@ -1,5 +1,13 @@
 import { Request, Response } from 'express';
-import { getCustomRepository, getRepository } from 'typeorm';
+import {
+    getCustomRepository,
+    getRepository,
+    IsNull,
+    LessThan,
+    MoreThan,
+    MoreThanOrEqual,
+    Not
+} from 'typeorm';
 
 import Driver from '../entities/Driver';
 import Offer from '../entities/Offer';
@@ -100,6 +108,47 @@ class OfferController {
         } catch (error) {
             return res.status(500).json(error);
         }
+    };
+
+    public getMyOffers = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const dt = new Date();
+        dt.setDate(dt.getDate() + 3); // Poner 3 como variable en config
+        let offers: Offer[] = [];
+        if (req.user instanceof User) {
+            const user = req.user as User;
+            offers = await this.offerRepository.find({
+                relations: ['shipment', 'shipment.user'],
+                where: {
+                    updatedDate: MoreThan(dt),
+                    shipment: {
+                        user: user,
+                        deliveryDate: IsNull(),
+                        state: Not('Canceled')
+                    }
+                }
+            });
+        }
+        if (req.user instanceof Driver) {
+            const driver = req.user as Driver;
+            offers = await this.offerRepository.find({
+                relations: ['driver', 'shipment'],
+                where: {
+                    driver: driver,
+                    updatedDate: MoreThan(dt),
+                    shipment: {
+                        deliveryDate: IsNull(),
+                        state: Not('Canceled')
+                    }
+                }
+            });
+        }
+        if (!offers) {
+            return res.status(200).json('User has no offers');
+        }
+        return res.status(200).json(offers);
     };
 }
 
