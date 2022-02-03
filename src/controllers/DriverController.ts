@@ -39,6 +39,7 @@ class DriverController {
 
             let newDriver = new Driver();
             newDriver = req.body;
+            newDriver.password = md5(newDriver.password);
             await this.driverRepository.save(newDriver);
             newDriver.password = '';
             return res.status(201).json(newDriver);

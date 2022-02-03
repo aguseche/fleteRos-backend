@@ -37,6 +37,7 @@ class UserController {
 
             let newUser = new User();
             newUser = req.body;
+            newUser.password = md5(newUser.password);
             await this.userRepository.save(newUser);
             newUser.password = '';
             return res.status(201).json(newUser);

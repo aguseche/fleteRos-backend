@@ -10,7 +10,10 @@ export default class Vehicle {
     ensurance: string;
 
     //Relationships
-    @ManyToOne(() => Driver, driver => driver.vehicle)
-    @JoinColumn({ name: 'drivers', referencedColumnName: 'id' })
-    drivers: Driver[];
+    @ManyToOne(() => Driver, {
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT'
+    })
+    @JoinColumn({ name: 'idDriver', referencedColumnName: 'id' })
+    driver: Driver;
 }
