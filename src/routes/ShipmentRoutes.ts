@@ -28,6 +28,11 @@ class ShipmentRoutes {
             user_validation,
             this.shipmentController.updateShipment
         );
+        this.router.get(
+            '/shipment/getMyShipments',
+            passport.authenticate('jwt', { session: false }),
+            this.shipmentController.getMyShipments
+        );
     }
 }
 

@@ -5,6 +5,7 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 import Item from '../entities/Item';
 import User from '../entities/User';
 import Shipment from '../entities/Shipment';
+import Driver from '../entities/Driver';
 
 interface IItem {
     description: string;
@@ -84,6 +85,26 @@ class ShipmentController {
         } catch (error) {
             return res.status(500).json(error);
         }
+    };
+
+    public getMyShipments = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        let shipments: Shipment[] = [];
+        if (req.user instanceof User) {
+            shipments = await this.shipmentRepository.getMyShipments_User(
+                req.user
+            );
+        } else if (req.user instanceof Driver) {
+            shipments = await this.shipmentRepository.getMyShipments_Driver(
+                req.user
+            );
+        }
+        if (!shipments) {
+            return res.status(403).json('This user has no shipments');
+        }
+        return res.status(200).json(shipments);
     };
 }
 
