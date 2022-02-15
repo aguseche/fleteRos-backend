@@ -77,10 +77,6 @@ class DriverController {
         req.logout();
         return res.status(200).json({ msg: 'success' });
     };
-
-    public getMe = (req: Request, res: Response): Response => {
-        return res.status(200).json(req.user);
-    };
 }
 
 export default DriverController;
