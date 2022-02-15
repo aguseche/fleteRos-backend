@@ -1,26 +1,22 @@
 import { Router } from 'express';
 import passport from 'passport';
-import UserController from '../controllers/UserController';
-import { user_validation } from '../middlewares/route_validator';
+import AuthController from '../controllers/AuthController';
+// import {
+//     user_validation,
+//     driver_validation
+// } from '../middlewares/route_validator';
 
 class AuthRouter {
     public router: Router = Router();
-    private userController = new UserController();
+    private authController = new AuthController();
 
     constructor() {
-        this.router.post('/user/signup', this.userController.signUp);
-        this.router.post('/user/signin', this.userController.signIn);
         this.router.get(
-            '/user/signout',
+            '/getMe',
             passport.authenticate('jwt', { session: false }),
-            user_validation,
-            this.userController.signOut
-        );
-        this.router.get(
-            '/user/me',
-            passport.authenticate('jwt', { session: false }),
-            user_validation,
-            this.userController.getMe
+            // user_validation,
+            // driver_validation,
+            this.authController.getMe
         );
     }
 }

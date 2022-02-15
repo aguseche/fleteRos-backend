@@ -115,7 +115,7 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const dt = new Date();
-        dt.setDate(dt.getDate() + 3); // Poner 3 como variable en config
+        dt.setDate(dt.getDate() - 3); // Poner 3 como variable en config
         let offers: Offer[] = [];
         if (req.user instanceof User) {
             const user = req.user as User;

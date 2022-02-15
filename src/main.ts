@@ -7,7 +7,8 @@ import {
     AuthRoutes,
     DriverRoutes,
     ShipmentRoutes,
-    OfferRoutes
+    OfferRoutes,
+    UserRoutes
 } from './routes';
 import 'reflect-metadata';
 import cors from 'cors';
@@ -34,6 +35,7 @@ async function init() {
         app.use(new DriverRoutes().router);
         app.use(new ShipmentRoutes().router);
         app.use(new OfferRoutes().router);
+        app.use(new UserRoutes().router);
 
         // app
         app.listen(app.get('port'), () => {

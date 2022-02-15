@@ -57,6 +57,12 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
+        /*
+        Devuelve los shipments disponibles para un driver
+        Por disponible decimos:
+        -shipDate >= hoy
+        -confirmationDate null
+        */
         const shipments = await this.shipmentRepository.getAvailableShipments();
         if (shipments === undefined) {
             return res.status(200).json('No shipments available');
@@ -91,6 +97,13 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
+        /* 
+        Devuelve shipments
+        Si es usuario:
+        -No estan cancelados, pertenecen al usuario y deliveryDate es null
+        Si es driver:
+        -Estan confirmados, pertenecen al driver y deliveryDate es null
+        */
         let shipments: Shipment[] = [];
         if (req.user instanceof User) {
             shipments = await this.shipmentRepository.getMyShipments_User(
