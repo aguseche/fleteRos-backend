@@ -33,7 +33,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
     }
     async getMyShipments_User(user: User): Promise<Shipment[]> {
         return this.find({
-            relations: ['user'],
+            relations: ['user', 'items', 'offers', 'offers.driver'],
             where: {
                 user: user,
                 deliveryDate: IsNull(),
