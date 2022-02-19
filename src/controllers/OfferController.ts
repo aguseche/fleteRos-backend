@@ -1,21 +1,14 @@
 import { Request, Response } from 'express';
-import {
-    getCustomRepository,
-    getRepository,
-    IsNull,
-    LessThan,
-    MoreThan,
-    MoreThanOrEqual,
-    Not
-} from 'typeorm';
+import { getCustomRepository, IsNull, MoreThan, Not } from 'typeorm';
 
 import Driver from '../entities/Driver';
 import Offer from '../entities/Offer';
 import User from '../entities/User';
+import OfferRepository from '../repositories/OfferRepository';
 import ShipmentRepository from '../repositories/ShipmentRepository';
 
 class OfferController {
-    private offerRepository = getRepository(Offer);
+    private offerRepository = getCustomRepository(OfferRepository);
     private shipmentRepository = getCustomRepository(ShipmentRepository);
 
     public registerOffer = async (
@@ -59,7 +52,7 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const user = req.user as User;
-        const oldOffer = await this.offerRepository.findOne({
+        const offer = await this.offerRepository.findOne({
             relations: ['shipment', 'shipment.user'],
             where: {
                 id: req.body.id,
@@ -68,15 +61,16 @@ class OfferController {
                 }
             }
         });
-        if (!oldOffer) {
+        if (!offer) {
             return res.status(403).json('Invalid offer id');
         }
-        if (oldOffer.confirmed === true) {
+        if (offer.confirmed === true) {
             return res.status(403).json('offer already confirmed');
         }
         try {
-            oldOffer.confirmed = true;
-            await this.offerRepository.save(oldOffer);
+            offer.confirmed = true;
+            offer.shipment.state = 'Offer Accepted';
+            await this.offerRepository.saveOffer(offer, offer.shipment);
             return res.status(200).json('Success');
         } catch (error) {
             return res.status(500).json(error);
