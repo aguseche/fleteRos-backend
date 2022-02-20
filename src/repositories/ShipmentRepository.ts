@@ -24,10 +24,11 @@ export default class ShipmentRepository extends Repository<Shipment> {
     }
     async getAvailableShipments(): Promise<Shipment[] | undefined> {
         return this.find({
-            relations: ['items'],
+            relations: ['items','offers'],
             where: {
                 shipDate: MoreThanOrEqual(Date.now()),
-                confirmationDate: IsNull()
+                confirmationDate: IsNull(),
+                state:'Waiting Offers'                
             }
         });
     }
@@ -43,7 +44,8 @@ export default class ShipmentRepository extends Repository<Shipment> {
     }
     async getMyShipments_Driver(driver: Driver): Promise<Shipment[]> {
         return this.createQueryBuilder('shipment')
-            .leftJoin('shipment.offers', 'offers')
+            .leftJoinAndSelect('shipment.offers', 'offers')            
+            .leftJoinAndSelect('shipment.items', 'items')
             .leftJoin('offers.driver', 'driver')
             .where('offers.confirmed =true')
             .andWhere('shipment.deliveryDate is null')
