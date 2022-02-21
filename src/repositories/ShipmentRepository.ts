@@ -22,8 +22,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
             await transactionalManager.save(items);
         });
     }
-    async getAvailableShipments(): // driver: Driver
-    Promise<Shipment[] | undefined> {
+    async getAvailableShipments(): Promise<Shipment[] | undefined> {
         //     return this.createQueryBuilder('shipment')
         //         .leftJoinAndSelect('shipment.offers', 'offers')
         //         .leftJoinAndSelect('shipment.items', 'items')
