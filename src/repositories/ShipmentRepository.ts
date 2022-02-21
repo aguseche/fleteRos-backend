@@ -22,15 +22,18 @@ export default class ShipmentRepository extends Repository<Shipment> {
             await transactionalManager.save(items);
         });
     }
-    async getAvailableShipments(): Promise<Shipment[] | undefined> {
-        return this.find({
-            relations: ['items','offers'],
-            where: {
-                shipDate: MoreThanOrEqual(Date.now()),
-                confirmationDate: IsNull(),
-                state:'Waiting Offers'                
-            }
-        });
+    async getAvailableShipments(
+        driver: Driver
+    ): Promise<Shipment[] | undefined> {
+        return this.createQueryBuilder('shipment')
+            .leftJoinAndSelect('shipment.offers', 'offers')
+            .leftJoinAndSelect('shipment.items', 'items')
+            .leftJoin('offers.driver', 'driver')
+            .where('shipment.shipDate >= Date.now()')
+            .where('shipment.confirmationDate is null')
+            .andWhere('shipment.state =:state', { state: 'Waiting Offers' })
+            .andWhere('driver.id != :id', { id: driver.id })
+            .getMany();
     }
     async getMyShipments_User(user: User): Promise<Shipment[]> {
         return this.find({
@@ -44,7 +47,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
     }
     async getMyShipments_Driver(driver: Driver): Promise<Shipment[]> {
         return this.createQueryBuilder('shipment')
-            .leftJoinAndSelect('shipment.offers', 'offers')            
+            .leftJoinAndSelect('shipment.offers', 'offers')
             .leftJoinAndSelect('shipment.items', 'items')
             .leftJoin('offers.driver', 'driver')
             .where('offers.confirmed =true')
