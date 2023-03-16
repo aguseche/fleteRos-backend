@@ -1,82 +1,76 @@
 import { Request, Response } from 'express';
 import { getCustomRepository } from 'typeorm';
 import md5 from 'md5';
-import jwt from 'jsonwebtoken';
-
+import AuthController from './AuthController';
 import DriverRepository from '../repositories/DriverRepository';
 import Driver from '../entities/Driver';
+import { INewDriver } from '../interfaces/INewDriver';
+import { validateDriver } from '../validations/driverValidator';
+import { StatusCodes } from 'http-status-codes';
 
 class DriverController {
     private driverRepository = getCustomRepository(DriverRepository);
 
-    private static createToken(driver: Driver) {
-        return jwt.sign(
-            { id: driver.id, username: driver.email },
-            process.env.JWTSECRET
-                ? process.env.JWTSECRET
-                : 'BNR8SM&dKn6cIUA#dP%7sF&$oErml5xb',
-            {
-                expiresIn: process.env.TOKEN_EXPIRATION_TIME // 1 dia
-            }
-        );
-    }
-
     public signUp = async (req: Request, res: Response): Promise<Response> => {
-        if (!req.body.email || !req.body.password) {
-            return res.status(400).json({
-                error: 'Please. Send your email and password'
+        const newDriver: INewDriver = req.body;
+
+        if (!validateDriver(newDriver)) {
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                error: 'Please. Send a valid email and password'
             });
         }
-
         try {
-            const driver = await this.driverRepository.findByEmail(
-                req.body.email
+            const oldDriver = await this.driverRepository.findByEmail(
+                newDriver.email
             );
 
-            if (driver) {
-                return res.status(400).json({ error: 'Email already exists' });
+            if (oldDriver) {
+                return res
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Email already exists' });
             }
 
-            let newDriver = new Driver();
-            newDriver = req.body;
             newDriver.password = md5(newDriver.password);
             await this.driverRepository.save(newDriver);
             newDriver.password = '';
-            return res.status(201).json(newDriver);
+            return res.status(StatusCodes.CREATED).json(newDriver);
         } catch (error) {
-            return res.status(500).json(error);
+            throw new Error('Failed to retrieve driver from the database');
         }
     };
+
     public signIn = async (req: Request, res: Response): Promise<Response> => {
-        if (!req.body.email || !req.body.password) {
+        const loginDriver: INewDriver = req.body;
+        if (!validateDriver(loginDriver)) {
             return res
-                .status(400)
+                .status(StatusCodes.BAD_REQUEST)
                 .json({ error: 'Email and Password required' });
         }
         try {
+            //hay que cambiar esta forma de autenticacion, esta horrible
             const driver = await this.driverRepository.authenticate(
-                req.body.email,
-                md5(req.body.password)
+                loginDriver.email,
+                md5(loginDriver.password)
             );
 
-            if (driver) {
-                driver.password = '';
-                const token = DriverController.createToken(driver);
-                return res.status(200).json({ driver, token });
+            if (!driver) {
+                return res
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Email or password incorrect' });
             }
-
-            return res
-                .status(400)
-                .json({ error: 'Email or password incorrect' });
+            driver.password = '';
+            const token = AuthController.createToken(driver);
+            return res.status(StatusCodes.OK).json({ driver, token });
         } catch (error) {
             console.log(error);
-            return res.status(500).json(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
     public signOut = (req: Request, res: Response): Response => {
-        req.logout();
-        return res.status(200).json({ msg: 'success' });
+        // req.logout();
+        return res.status(StatusCodes.OK).json({ msg: 'success' });
     };
+    //porque no tengo un getme aca ?
 }
 
 export default DriverController;

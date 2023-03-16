@@ -64,9 +64,7 @@ class ShipmentController {
         -confirmationDate null
         */
         const driver = req.user as Driver;
-        const shipments = await this.shipmentRepository.getAvailableShipments(
-            driver
-        );
+        const shipments = await this.shipmentRepository.getAvailableShipments(/* driver*/);
         if (shipments === undefined) {
             return res.status(200).json('No shipments available');
         }
