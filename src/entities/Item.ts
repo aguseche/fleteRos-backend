@@ -25,10 +25,10 @@ export default class Item {
     @Column({ type: 'int', name: 'quantity' })
     quantity: number;
 
-    @Column({ name: 'image_1', length: 50 })
+    @Column({ name: 'image_1', length: 50, nullable: true, default: null })
     image_1: string;
 
-    @Column({ name: 'image_2', length: 50 })
+    @Column({ name: 'image_2', length: 50, nullable: true, default: null })
     image_2: string;
 
     @ManyToOne(() => Shipment, {
@@ -37,4 +37,8 @@ export default class Item {
     })
     @JoinColumn({ name: 'idShipment', referencedColumnName: 'id' })
     shipment: Shipment;
+
+    constructor(partial: Partial<Item> = {}) {
+        Object.assign(this, partial);
+    }
 }

@@ -6,15 +6,10 @@ import Item from '../entities/Item';
 import User from '../entities/User';
 import Shipment from '../entities/Shipment';
 import Driver from '../entities/Driver';
-
-interface IItem {
-    description: string;
-    weight: number;
-    size: string;
-    quantity: number;
-    image_1: string;
-    image_2: string;
-}
+import { IItem } from '../interfaces/IItem';
+import { StatusCodes } from 'http-status-codes';
+import { validateItem } from '../validations/itemValidator';
+import { validateShipment } from '../validations/shipmentValidator';
 class ShipmentController {
     private shipmentRepository = getCustomRepository(ShipmentRepository);
 
@@ -22,35 +17,64 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        if (!req.body.items) {
-            return res.status(404).json('Must have at least one item');
-        }
-        const interfaceitems = req.body.items as IItem[];
+        const interfaceItems = req.body.items as IItem[];
         const user = req.user as User;
-        const shipment = new Shipment();
-        shipment.user = user;
-        shipment.state = 'Waiting Offers';
-        shipment.shipDate = req.body.shipment.shipDate;
-        shipment.locationFrom = req.body.shipment.locationFrom;
-        shipment.locationTo = req.body.shipment.locationTo;
-        const items: Item[] = [];
-        interfaceitems.forEach(
-            ({ description, weight, size, quantity, image_1, image_2 }) => {
-                const newItem = new Item();
-                newItem.description = description;
-                newItem.weight = weight;
-                newItem.size = size;
-                newItem.quantity = quantity;
-                newItem.image_1 = image_1;
-                newItem.image_2 = image_2;
-                items.push(newItem);
-            }
-        );
+
+        if (!interfaceItems || interfaceItems.length === 0) {
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('Must have at least one item');
+        }
         try {
+            //falta diferenciar los try catch con los errores que tiran las validaciones. no se como se hace
+            const items: Item[] = interfaceItems.map(
+                ({ description, weight, size, quantity, image_1, image_2 }) => {
+                    const newItem = new Item({
+                        description,
+                        weight,
+                        size,
+                        quantity,
+                        image_1,
+                        image_2
+                    });
+                    if (!validateItem(newItem)) {
+                        throw new Error('Invalid Item');
+                    }
+                    return newItem;
+                }
+            );
+            const shipment = new Shipment({
+                user,
+                state: 'Waiting Offers',
+                shipDate: new Date(req.body.shipment.shipDate),
+                locationFrom: req.body.shipment.locationFrom,
+                locationTo: req.body.shipment.locationTo
+            });
+            if (!validateShipment(shipment)) {
+                throw new Error('Invalid Shipment');
+            }
             await this.shipmentRepository.registerShipment(shipment, items);
-            return res.status(200).json({ status: 'success' });
-        } catch (error) {
-            return res.status(500).json(error);
+            return res.status(StatusCodes.CREATED).json({ status: 'success' });
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                if (error.message === 'Invalid Item') {
+                    return res
+                        .status(StatusCodes.BAD_REQUEST)
+                        .json('One or more items are invalid');
+                } else if (error.message === 'Invalid Shipment') {
+                    return res
+                        .status(StatusCodes.BAD_REQUEST)
+                        .json('The Shipment is invalid');
+                } else {
+                    return res
+                        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                        .json(error);
+                }
+            }
+            return res
+                .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                .json('Unknown error occurred');
         }
     };
     public getAvailableShipments = async (
@@ -63,8 +87,9 @@ class ShipmentController {
         -shipDate >= hoy
         -confirmationDate null
         */
-        const driver = req.user as Driver;
-        const shipments = await this.shipmentRepository.getAvailableShipments(/* driver*/);
+        // const driver = req.user as Driver;
+        const shipments =
+            await this.shipmentRepository.getAvailableShipments(/* driver*/);
         if (shipments === undefined) {
             return res.status(200).json('No shipments available');
         }

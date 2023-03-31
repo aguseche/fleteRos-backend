@@ -16,10 +16,11 @@ export default class ShipmentRepository extends Repository<Shipment> {
     async registerShipment(shipment: Shipment, items: Item[]): Promise<void> {
         return this.manager.transaction(async transactionalManager => {
             const insertShipment = await transactionalManager.save(shipment);
-            items.forEach(is => {
-                is.shipment = insertShipment;
+            const itemsToSave = items.map(item => {
+                item.shipment = insertShipment;
+                return item;
             });
-            await transactionalManager.save(items);
+            await transactionalManager.save(Item, itemsToSave);
         });
     }
     async getAvailableShipments(): Promise<Shipment[] | undefined> {

@@ -71,7 +71,15 @@ class UserController {
         }
     };
     public signOut = (req: Request, res: Response): Response => {
-        // req.logout();
+        //esto no desloguea, no borra el token
+        req.logout(function (err) {
+            if (err) {
+                return res
+                    .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                    .json({ msg: 'Error deleting session' });
+            }
+        });
+        console.log(req);
         return res.status(StatusCodes.OK).json({ msg: 'success' });
     };
 
