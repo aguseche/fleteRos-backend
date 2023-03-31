@@ -7,6 +7,9 @@ import User from '../entities/User';
 import OfferRepository from '../repositories/OfferRepository';
 import ShipmentRepository from '../repositories/ShipmentRepository';
 
+import { StatusCodes } from 'http-status-codes';
+import { validateOffer } from '../validations/offerValidator';
+
 class OfferController {
     private offerRepository = getCustomRepository(OfferRepository);
     private shipmentRepository = getCustomRepository(ShipmentRepository);
@@ -15,35 +18,42 @@ class OfferController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        const driver = req.user as Driver;
-        //validar que exista el shipment
-        const shipment = await this.shipmentRepository.findOne(req.body.id);
-        if (!shipment) {
-            return res.status(403).json('Invalid shipment id');
-        }
-        //validar que no haya oferta del driver para ese shipment
-        const oldOffer = await this.offerRepository.findOne({
-            relations: ['shipment'],
-            where: {
-                shipment: shipment,
-                driver: driver
-            }
-        });
-        if (oldOffer) {
-            return res.status(403).json('Already have offer');
-        }
-        //crear shipment
-        const offer = new Offer();
-        offer.driver = driver;
-        offer.price = req.body.offer.price;
-        offer.confirmed = false;
-        offer.shipment = shipment;
-        //response
         try {
+            const driver = req.user as Driver;
+            //validar que exista el shipment
+            const shipment = await this.shipmentRepository.findOne(req.body.id);
+            if (!shipment) {
+                throw new Error('Invalid shipment id');
+            }
+            //validar que no haya oferta del driver para ese shipment
+            const oldOffer = await this.offerRepository.findOne({
+                relations: ['shipment'],
+                where: {
+                    shipment: shipment,
+                    driver: driver
+                }
+            });
+            if (oldOffer) {
+                throw new Error('Already have offer');
+            }
+            //crear shipment
+            const offer = new Offer();
+            offer.driver = driver;
+            offer.price = req.body.offer.price;
+            offer.confirmed = false;
+            offer.shipment = shipment;
+            if (!validateOffer(offer)) {
+                throw new Error('Invalid Offer');
+            }
+            //response
             await this.offerRepository.save(offer);
-            return res.status(200).json({ status: 'success' });
+            return res.status(StatusCodes.OK).json({ status: 'success' });
         } catch (error) {
-            return res.status(500).json(error);
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
 
@@ -62,18 +72,20 @@ class OfferController {
             }
         });
         if (!offer) {
-            return res.status(403).json('Invalid offer id');
+            return res.status(StatusCodes.BAD_REQUEST).json('Invalid offer id');
         }
         if (offer.confirmed === true) {
-            return res.status(403).json('offer already confirmed');
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('offer already confirmed');
         }
         try {
             offer.confirmed = true;
             offer.shipment.state = 'Offer Accepted';
             await this.offerRepository.saveOffer(offer, offer.shipment);
-            return res.status(200).json('Success');
+            return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
-            return res.status(500).json(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
 
@@ -90,17 +102,19 @@ class OfferController {
             }
         });
         if (!oldOffer) {
-            return res.status(403).json('Invalid offer id');
+            return res.status(StatusCodes.BAD_REQUEST).json('Invalid offer id');
         }
         if (oldOffer.confirmed === true) {
             // aca deberiamos ver alguna regla de negocio de cuando se puede cancelar y cuando no
-            return res.status(403).json('offer already confirmed');
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('offer already confirmed');
         }
         try {
             await this.offerRepository.delete(oldOffer);
-            return res.status(200).json('Success');
+            return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
-            return res.status(500).json(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
 
@@ -140,9 +154,9 @@ class OfferController {
             });
         }
         if (!offers) {
-            return res.status(200).json('User has no offers');
+            return res.status(StatusCodes.OK).json('User has no offers');
         }
-        return res.status(200).json(offers);
+        return res.status(StatusCodes.BAD_REQUEST).json(offers);
     };
 }
 

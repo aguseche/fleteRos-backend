@@ -5,7 +5,6 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 import Item from '../entities/Item';
 import User from '../entities/User';
 import Shipment from '../entities/Shipment';
-import Driver from '../entities/Driver';
 import { IItem } from '../interfaces/IItem';
 import { StatusCodes } from 'http-status-codes';
 import { validateItem } from '../validations/itemValidator';
@@ -26,7 +25,6 @@ class ShipmentController {
                 .json('Must have at least one item');
         }
         try {
-            //falta diferenciar los try catch con los errores que tiran las validaciones. no se como se hace
             const items: Item[] = interfaceItems.map(
                 ({ description, weight, size, quantity, image_1, image_2 }) => {
                     const newItem = new Item({
@@ -58,26 +56,12 @@ class ShipmentController {
         } catch (error: unknown) {
             console.log(error);
             if (error instanceof Error) {
-                if (error.message === 'Invalid Item') {
-                    return res
-                        .status(StatusCodes.BAD_REQUEST)
-                        .json('One or more items are invalid');
-                } else if (error.message === 'Invalid Shipment') {
-                    return res
-                        .status(StatusCodes.BAD_REQUEST)
-                        .json('The Shipment is invalid');
-                } else {
-                    return res
-                        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                        .json(error);
-                }
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
             }
-            return res
-                .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                .json('Unknown error occurred');
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
-    public getAvailableShipments = async (
+    public getAvailable = async (
         req: Request,
         res: Response
     ): Promise<Response> => {
@@ -89,11 +73,11 @@ class ShipmentController {
         */
         // const driver = req.user as Driver;
         const shipments =
-            await this.shipmentRepository.getAvailableShipments(/* driver*/);
+            await this.shipmentRepository.getAvailable(/* driver*/);
         if (shipments === undefined) {
-            return res.status(200).json('No shipments available');
+            return res.status(StatusCodes.OK).json('No shipments available');
         }
-        return res.status(200).json(shipments);
+        return res.status(StatusCodes.OK).json(shipments);
     };
 
     public updateShipment = async (
@@ -108,18 +92,20 @@ class ShipmentController {
             }
         });
         if (!oldShipment) {
-            return res.status(403).json('Invalid shipment id');
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('Invalid shipment id');
         }
         try {
             this.shipmentRepository.merge(oldShipment, req.body.shipment);
             await this.shipmentRepository.save(oldShipment);
-            return res.status(200).json('Success');
+            return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
-            return res.status(500).json(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
 
-    public getMyShipments = async (
+    public getAllActive = async (
         req: Request,
         res: Response
     ): Promise<Response> => {
@@ -130,20 +116,14 @@ class ShipmentController {
         Si es driver:
         -Estan confirmados, pertenecen al driver y deliveryDate es null
         */
-        let shipments: Shipment[] = [];
-        if (req.user instanceof User) {
-            shipments = await this.shipmentRepository.getMyShipments_User(
-                req.user
-            );
-        } else if (req.user instanceof Driver) {
-            shipments = await this.shipmentRepository.getMyShipments_Driver(
-                req.user
-            );
-        }
+        const shipments: Shipment[] =
+            await this.shipmentRepository.getAllActive(req.user);
         if (!shipments) {
-            return res.status(403).json('This user has no shipments');
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('This person has no shipments');
         }
-        return res.status(200).json(shipments);
+        return res.status(StatusCodes.OK).json(shipments);
     };
 }
 

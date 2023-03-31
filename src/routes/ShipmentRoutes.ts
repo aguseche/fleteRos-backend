@@ -17,21 +17,21 @@ class ShipmentRoutes {
             this.shipmentController.registerShipment
         );
         this.router.get(
-            '/shipment/getAvailableShipments',
+            '/shipment/available',
             passport.authenticate('jwt', { session: false }),
             driver_validation,
-            this.shipmentController.getAvailableShipments
+            this.shipmentController.getAvailable
         );
         this.router.put(
-            '/shipment/update',
+            '/shipment',
             passport.authenticate('jwt', { session: false }),
             user_validation,
             this.shipmentController.updateShipment
         );
         this.router.get(
-            '/shipment/getMyShipments',
+            '/shipment/allActive',
             passport.authenticate('jwt', { session: false }),
-            this.shipmentController.getMyShipments
+            this.shipmentController.getAllActive
         );
     }
 }

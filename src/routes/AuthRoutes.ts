@@ -12,7 +12,7 @@ class AuthRouter {
 
     constructor() {
         this.router.get(
-            '/getMe',
+            '/me',
             passport.authenticate('jwt', { session: false }),
             // user_validation,
             // driver_validation,

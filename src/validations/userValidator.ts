@@ -1,5 +1,5 @@
-import { validateEmail } from './emailValidator';
-import { validatePassword } from './passwordValidator';
+import { validateEmail } from './personValidators/emailValidator';
+import { validatePassword } from './personValidators/passwordValidator';
 import { INewUser } from '../interfaces/INewUser';
 
 export const validateUser = (user: INewUser): boolean => {

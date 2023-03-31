@@ -1,5 +1,5 @@
-import { validateEmail } from './emailValidator';
-import { validatePassword } from './passwordValidator';
+import { validateEmail } from './personValidators/emailValidator';
+import { validatePassword } from './personValidators/passwordValidator';
 import { INewDriver } from '../interfaces/INewDriver';
 
 export const validateDriver = (driver: INewDriver): boolean => {

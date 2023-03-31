@@ -3,9 +3,10 @@ import User from '../entities/User';
 import Driver from '../entities/Driver';
 import jwt from 'jsonwebtoken';
 
+import { StatusCodes } from 'http-status-codes';
 class AuthController {
     public getMe = (req: Request, res: Response): Response => {
-        return res.status(200).json(req.user);
+        return res.status(StatusCodes.OK).json(req.user);
     };
 
     public static createToken(base_user: Driver | User): string {
