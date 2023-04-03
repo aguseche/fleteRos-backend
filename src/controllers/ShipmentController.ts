@@ -9,6 +9,7 @@ import { IItem } from '../interfaces/IItem';
 import { StatusCodes } from 'http-status-codes';
 import { validateItem } from '../validations/itemValidator';
 import { validateShipment } from '../validations/shipmentValidator';
+import Driver from '../entities/Driver';
 class ShipmentController {
     private shipmentRepository = getCustomRepository(ShipmentRepository);
 
@@ -70,10 +71,10 @@ class ShipmentController {
         Por disponible decimos:
         -shipDate >= hoy
         -confirmationDate null
+        -No fue ofertado por el driver
         */
-        // const driver = req.user as Driver;
-        const shipments =
-            await this.shipmentRepository.getAvailable(/* driver*/);
+        const driver = req.user as Driver;
+        const shipments = await this.shipmentRepository.getAvailable(driver);
         if (shipments === undefined) {
             return res.status(StatusCodes.OK).json('No shipments available');
         }

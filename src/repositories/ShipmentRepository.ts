@@ -1,10 +1,4 @@
-import {
-    EntityRepository,
-    IsNull,
-    MoreThanOrEqual,
-    Not,
-    Repository
-} from 'typeorm';
+import { EntityRepository, IsNull, Not, Repository } from 'typeorm';
 
 import Shipment from '../entities/Shipment';
 import Item from '../entities/Item';
@@ -23,28 +17,25 @@ export default class ShipmentRepository extends Repository<Shipment> {
             await transactionalManager.save(Item, itemsToSave);
         });
     }
-    async getAvailable(): Promise<Shipment[] | undefined> {
-        //     return this.createQueryBuilder('shipment')
-        //         .leftJoinAndSelect('shipment.offers', 'offers')
-        //         .leftJoinAndSelect('shipment.items', 'items')
-        //         .leftJoin('offers.driver', 'driver')
-        //         .where('shipment.shipDate >= Date.now()')
-        //         .andWhere('shipment.confirmationDate is null')
-        //         .andWhere('shipment.state =:state', { state: 'Waiting Offers' })
-        //         .andWhere('driver.id != :id', { id: driver.id })
-        //         .getMany();
-        // }
+    async getAvailable(driver: Driver): Promise<Shipment[] | undefined> {
         //Devuelve los shipments disponibles al dia de la fecha que no hayan sido ofertados por el driver
         //Por disponible se entiende que no estan confirmados ni eliminados, su estado es 'Waiting Offers'
-        //falta que no haya ofertado el driver
-        return this.find({
-            relations: ['items', 'offers'],
-            where: {
-                shipDate: MoreThanOrEqual(Date.now()),
-                confirmationDate: IsNull(),
-                state: 'Waiting Offers'
-            }
-        });
+        //Ademas, tampoco tiene que haber ofertas activas del driver en el shipment
+
+        const subQuery = await this.createQueryBuilder('shipment')
+            .select('shipment.id')
+            .leftJoin('shipment.offers', 'offers')
+            .where('offers.driver.id = :driverId', { driverId: driver.id })
+            .getQuery();
+        return await this.createQueryBuilder('shipment')
+            .leftJoinAndSelect('shipment.items', 'items')
+            .leftJoin('shipment.offers', 'offers')
+            .where('shipment.shipDate >= :now', { now: Date.now() })
+            .andWhere('shipment.confirmationDate IS NULL')
+            .andWhere('shipment.state =:state', { state: 'Waiting Offers' })
+            .andWhere(`shipment.id NOT IN (${subQuery})`)
+            .setParameter('driverId', driver.id)
+            .getMany();
     }
 
     async getAllActive(person: Express.User | undefined): Promise<Shipment[]> {
