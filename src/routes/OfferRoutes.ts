@@ -11,7 +11,7 @@ class OfferRoutes {
 
     constructor() {
         this.router.get(
-            '/offer/getMyOffers',
+            '/offer/me',
             passport.authenticate('jwt', { session: false }),
             this.offerController.getMyOffers
         );

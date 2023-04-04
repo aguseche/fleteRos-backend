@@ -36,16 +36,16 @@ class OfferController {
             if (oldOffer) {
                 throw new Error('Already have offer');
             }
-            //crear shipment
+            //crear offer
             const offer = new Offer();
             offer.driver = driver;
             offer.price = req.body.offer.price;
             offer.confirmed = false;
             offer.shipment = shipment;
+            //Valida la oferta
             if (!validateOffer(offer)) {
                 throw new Error('Invalid Offer');
             }
-            //response
             await this.offerRepository.save(offer);
             return res.status(StatusCodes.OK).json({ status: 'success' });
         } catch (error) {
@@ -62,29 +62,37 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const user = req.user as User;
-        const offer = await this.offerRepository.findOne({
-            relations: ['shipment', 'shipment.user'],
-            where: {
-                id: req.body.id,
-                shipment: {
-                    user: user
-                }
-            }
-        });
-        if (!offer) {
-            return res.status(StatusCodes.BAD_REQUEST).json('Invalid offer id');
-        }
-        if (offer.confirmed === true) {
-            return res
-                .status(StatusCodes.BAD_REQUEST)
-                .json('offer already confirmed');
-        }
         try {
+            const offer = await this.offerRepository.findOne({
+                relations: ['shipment', 'shipment.user'],
+                where: {
+                    id: req.body.id,
+                    shipment: {
+                        user: user
+                    }
+                }
+            });
+            //Valida que exista la oferta (relacion Shipment - User)
+            if (!offer) {
+                throw new Error('Invalid Offer');
+            }
+            //Valida que la oferta no este confirmada
+            if (offer.confirmed === true) {
+                throw new Error('offer already confirmed');
+            }
             offer.confirmed = true;
             offer.shipment.state = 'Offer Accepted';
+            //Valida la oferta en general
+            if (!validateOffer(offer)) {
+                throw new Error('Invalid Offer');
+            }
             await this.offerRepository.saveOffer(offer, offer.shipment);
             return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
@@ -122,41 +130,22 @@ class OfferController {
         req: Request,
         res: Response
     ): Promise<Response> => {
+        //Busca las ofertas (ya sea User o Driver) validando que
+        //updatedDate >= hoy - 3 dias
+        //deliveryDate IS NULL
+        //state != Cancelled
+        //Devuelve Offer con su Shipment
         const dt = new Date();
         dt.setDate(dt.getDate() - 3); // Poner 3 como variable en config
-        let offers: Offer[] = [];
-        if (req.user instanceof User) {
-            const user = req.user as User;
-            offers = await this.offerRepository.find({
-                relations: ['shipment', 'shipment.user'],
-                where: {
-                    updatedDate: MoreThan(dt),
-                    shipment: {
-                        user: user,
-                        deliveryDate: IsNull(),
-                        state: Not('Canceled')
-                    }
-                }
-            });
+        try {
+            const offers: Offer[] = await this.offerRepository.getOffers(
+                req.user,
+                dt
+            );
+            return res.status(StatusCodes.OK).json(offers);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
-        if (req.user instanceof Driver) {
-            const driver = req.user as Driver;
-            offers = await this.offerRepository.find({
-                relations: ['driver', 'shipment'],
-                where: {
-                    driver: driver,
-                    updatedDate: MoreThan(dt),
-                    shipment: {
-                        deliveryDate: IsNull(),
-                        state: Not('Canceled')
-                    }
-                }
-            });
-        }
-        if (!offers) {
-            return res.status(StatusCodes.OK).json('User has no offers');
-        }
-        return res.status(StatusCodes.BAD_REQUEST).json(offers);
     };
 }
 
