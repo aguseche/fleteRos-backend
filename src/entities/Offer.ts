@@ -23,8 +23,8 @@ export default class Offer {
     @Column('decimal', { name: 'price', precision: 10, scale: 2 })
     price: number;
 
-    @Column({ type: 'boolean', name: 'confirmed' })
-    confirmed: boolean;
+    @Column({ name: 'state', length: 50 })
+    state: string;
 
     //Relationships
     @ManyToOne(() => Driver, {

@@ -8,7 +8,7 @@ export const validateItem = (item: Item): boolean => {
     return (
         validateDescription(item.description) &&
         validateWeight(item.weight) &&
-        validateSize(item.size) &&
+        validateSize(item.height, item.width, item.depth) &&
         validateQuantity(item.quantity)
     );
 };

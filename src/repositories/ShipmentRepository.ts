@@ -53,7 +53,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
                 .leftJoinAndSelect('shipment.offers', 'offers')
                 .leftJoinAndSelect('shipment.items', 'items')
                 .leftJoin('offers.driver', 'driver')
-                .where('offers.confirmed =true')
+                .where('offers.state =:state', { state: 'sent' })
                 .andWhere('shipment.deliveryDate is null')
                 .andWhere('driver.id =:id', { id: person.id })
                 .getMany();

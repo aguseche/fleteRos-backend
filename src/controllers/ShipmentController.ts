@@ -27,11 +27,22 @@ class ShipmentController {
         }
         try {
             const items: Item[] = interfaceItems.map(
-                ({ description, weight, size, quantity, image_1, image_2 }) => {
+                ({
+                    description,
+                    weight,
+                    height,
+                    width,
+                    depth,
+                    quantity,
+                    image_1,
+                    image_2
+                }) => {
                     const newItem = new Item({
                         description,
                         weight,
-                        size,
+                        height,
+                        width,
+                        depth,
                         quantity,
                         image_1,
                         image_2

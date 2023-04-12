@@ -39,8 +39,8 @@ class OfferController {
             //crear offer
             const offer = new Offer();
             offer.driver = driver;
-            offer.price = req.body.offer.price;
-            offer.confirmed = false;
+            offer.price = Number(req.body.offer.price);
+            offer.state = 'sent';
             offer.shipment = shipment;
             //Valida la oferta
             if (!validateOffer(offer)) {
@@ -77,10 +77,10 @@ class OfferController {
                 throw new Error('Invalid Offer');
             }
             //Valida que la oferta no este confirmada
-            if (offer.confirmed === true) {
+            if (offer.state === 'confirmed') {
                 throw new Error('offer already confirmed');
             }
-            offer.confirmed = true;
+            offer.state = 'confirmed';
             offer.shipment.state = 'Offer Accepted';
             //Valida la oferta en general
             if (!validateOffer(offer)) {
@@ -112,7 +112,7 @@ class OfferController {
         if (!oldOffer) {
             return res.status(StatusCodes.BAD_REQUEST).json('Invalid offer id');
         }
-        if (oldOffer.confirmed === true) {
+        if (oldOffer.state === 'confirmed') {
             // aca deberiamos ver alguna regla de negocio de cuando se puede cancelar y cuando no
             return res
                 .status(StatusCodes.BAD_REQUEST)
