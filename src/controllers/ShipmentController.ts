@@ -10,6 +10,7 @@ import { StatusCodes } from 'http-status-codes';
 import { validateItem } from '../validations/itemValidator';
 import { validateShipment } from '../validations/shipmentValidator';
 import Driver from '../entities/Driver';
+import { SHIPMENT_STATE } from '../constants';
 class ShipmentController {
     private shipmentRepository = getCustomRepository(ShipmentRepository);
 
@@ -55,7 +56,7 @@ class ShipmentController {
             );
             const shipment = new Shipment({
                 user,
-                state: 'Waiting Offers',
+                state: SHIPMENT_STATE.waiting_offers,
                 shipDate: new Date(req.body.shipment.shipDate),
                 locationFrom: req.body.shipment.locationFrom,
                 locationTo: req.body.shipment.locationTo
@@ -134,6 +135,42 @@ class ShipmentController {
             return res.status(StatusCodes.OK).json(shipments);
         } catch (error) {
             console.log(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public deleteShipment = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const shipment = await this.shipmentRepository.findOne({
+                relations: ['user'],
+                where: {
+                    user: req.user,
+                    id: req.body.id
+                }
+            });
+            if (!shipment) {
+                throw new Error('Invalid shipment id');
+            }
+            // if (shipment.state === SHIPMENT_STATE.confirmed) {
+            //     //agregar RN
+            //     throw new Error('Shipment state confirmed or cancelled');
+            // }
+            if (shipment.state !== SHIPMENT_STATE.waiting_offers) {
+                throw new Error('Shipment state confirmed or cancelled');
+            }
+            shipment.state = SHIPMENT_STATE.cancelled;
+            if (!validateShipment(shipment)) {
+                throw new Error('Invalid Shipment');
+            }
+            await this.shipmentRepository.save(shipment);
+            return res.status(StatusCodes.OK).json('Success');
+        } catch (error) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };

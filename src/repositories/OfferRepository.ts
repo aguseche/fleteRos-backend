@@ -15,7 +15,8 @@ export default class OfferRepository extends Repository<Offer> {
     }
     async getOffers(
         person: Express.User | undefined,
-        dt: Date
+        dt: Date,
+        state: string
     ): Promise<Offer[]> {
         if (person instanceof User) {
             return this.find({
@@ -25,7 +26,7 @@ export default class OfferRepository extends Repository<Offer> {
                     shipment: {
                         user: person,
                         deliveryDate: IsNull(),
-                        state: Not('Canceled')
+                        state: Not(state)
                     }
                 }
             });
@@ -37,7 +38,7 @@ export default class OfferRepository extends Repository<Offer> {
                     updatedDate: MoreThan(dt),
                     shipment: {
                         deliveryDate: IsNull(),
-                        state: Not('Canceled')
+                        state: Not(state)
                     }
                 }
             });

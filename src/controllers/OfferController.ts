@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { getCustomRepository, IsNull, MoreThan, Not } from 'typeorm';
 
+import { DAYS_SINCE_UPDATED, OFFER_STATE } from '../constants';
+
 import Driver from '../entities/Driver';
 import Offer from '../entities/Offer';
 import User from '../entities/User';
@@ -9,6 +11,7 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 
 import { StatusCodes } from 'http-status-codes';
 import { validateOffer } from '../validations/offerValidator';
+import { SHIPMENT_STATE } from '../constants';
 
 class OfferController {
     private offerRepository = getCustomRepository(OfferRepository);
@@ -24,6 +27,10 @@ class OfferController {
             const shipment = await this.shipmentRepository.findOne(req.body.id);
             if (!shipment) {
                 throw new Error('Invalid shipment id');
+            }
+            //validar que el state del shipment sea WAITING_OFFERS
+            if (shipment.state !== SHIPMENT_STATE.waiting_offers) {
+                throw new Error('Shipment not waiting for offers');
             }
             //validar que no haya oferta del driver para ese shipment
             const oldOffer = await this.offerRepository.findOne({
@@ -77,11 +84,11 @@ class OfferController {
                 throw new Error('Invalid Offer');
             }
             //Valida que la oferta no este confirmada
-            if (offer.state === 'confirmed') {
+            if (offer.state === OFFER_STATE.confirmed) {
                 throw new Error('offer already confirmed');
             }
-            offer.state = 'confirmed';
-            offer.shipment.state = 'Offer Accepted';
+            offer.state = OFFER_STATE.confirmed;
+            offer.shipment.state = SHIPMENT_STATE.confirmed;
             //Valida la oferta en general
             if (!validateOffer(offer)) {
                 throw new Error('Invalid Offer');
@@ -102,26 +109,36 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const driver = req.user as Driver;
-        const oldOffer = await this.offerRepository.findOne({
+        const offer = await this.offerRepository.findOne({
             relations: ['driver'],
             where: {
                 id: req.body.id,
                 driver: driver
             }
         });
-        if (!oldOffer) {
-            return res.status(StatusCodes.BAD_REQUEST).json('Invalid offer id');
-        }
-        if (oldOffer.state === 'confirmed') {
-            // aca deberiamos ver alguna regla de negocio de cuando se puede cancelar y cuando no
-            return res
-                .status(StatusCodes.BAD_REQUEST)
-                .json('offer already confirmed');
-        }
+
         try {
-            await this.offerRepository.delete(oldOffer);
+            if (!offer) {
+                throw new Error('Invalid Offer');
+            }
+            // if (offer.state === OFFER_STATE.confirmed) {
+            //     // aca deberiamos ver alguna regla de negocio de cuando se puede cancelar y cuando no
+            //     throw new Error('Offer Already Confirmed');
+            // }
+            if (offer.state !== OFFER_STATE.sent) {
+                throw new Error('Offer State is not sent');
+            }
+            offer.state = OFFER_STATE.deleted;
+            if (!validateOffer(offer)) {
+                throw new Error('Invalid Offer');
+            }
+            await this.offerRepository.save(offer);
             return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
@@ -131,16 +148,17 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         //Busca las ofertas (ya sea User o Driver) validando que
-        //updatedDate >= hoy - 3 dias
+        //updatedDate >= hoy - 3 dias -> No se porque esto pero lo deje
         //deliveryDate IS NULL
         //state != Cancelled
         //Devuelve Offer con su Shipment
-        const dt = new Date();
-        dt.setDate(dt.getDate() - 3); // Poner 3 como variable en config
+        const date = new Date();
+        date.setDate(date.getDate() - DAYS_SINCE_UPDATED);
         try {
             const offers: Offer[] = await this.offerRepository.getOffers(
                 req.user,
-                dt
+                date,
+                OFFER_STATE.cancelled
             );
             return res.status(StatusCodes.OK).json(offers);
         } catch (error) {

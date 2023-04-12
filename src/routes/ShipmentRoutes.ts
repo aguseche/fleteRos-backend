@@ -33,6 +33,12 @@ class ShipmentRoutes {
             passport.authenticate('jwt', { session: false }),
             this.shipmentController.getAllActive
         );
+        this.router.put(
+            '/shipment/delete',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.shipmentController.deleteShipment
+        );
     }
 }
 

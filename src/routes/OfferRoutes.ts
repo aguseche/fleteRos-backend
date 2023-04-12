@@ -27,7 +27,7 @@ class OfferRoutes {
             user_validation,
             this.offerController.acceptOffer
         );
-        this.router.delete(
+        this.router.put(
             '/offer/delete',
             passport.authenticate('jwt', { session: false }),
             driver_validation,
