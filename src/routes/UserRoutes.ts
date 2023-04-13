@@ -16,6 +16,30 @@ class UserRouter {
             user_validation,
             this.userController.signOut
         );
+        this.router.get(
+            '/user/shipments/waiting_offers',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.userController.getShipmentsWaitingOffers
+        );
+        this.router.get(
+            '/user/shipments/active',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.userController.getShipmentsActive
+        );
+        this.router.get(
+            '/user/shipments/cancelled',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.userController.getShipmentsCancelled
+        );
+        this.router.get(
+            '/user/shipments/delivered',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.userController.getShipmentsDelivered
+        );
     }
 }
 

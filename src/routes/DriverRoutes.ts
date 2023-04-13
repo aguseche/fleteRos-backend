@@ -45,6 +45,18 @@ class driverRouter {
             driver_validation,
             this.driverController.getOffersCancelled
         );
+        this.router.get(
+            '/driver/shipments/available',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getShipmentsAvailable
+        );
+        this.router.get(
+            '/driver/shipments/active',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getShipmentsActive
+        );
     }
 }
 

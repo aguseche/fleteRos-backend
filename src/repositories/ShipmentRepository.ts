@@ -1,4 +1,10 @@
-import { EntityRepository, IsNull, Not, Repository } from 'typeorm';
+import {
+    EntityRepository,
+    IsNull,
+    MoreThanOrEqual,
+    Not,
+    Repository
+} from 'typeorm';
 
 import Shipment from '../entities/Shipment';
 import Item from '../entities/Item';
@@ -41,26 +47,79 @@ export default class ShipmentRepository extends Repository<Shipment> {
             .getMany();
     }
 
-    async getAllActive(person: Express.User | undefined): Promise<Shipment[]> {
-        if (person instanceof User) {
-            return this.find({
-                relations: ['user', 'items', 'offers', 'offers.driver'],
-                where: {
-                    user: person,
-                    deliveryDate: IsNull(),
-                    state: Not('Canceled')
-                }
-            });
-        } else if (person instanceof Driver) {
-            return this.createQueryBuilder('shipment')
-                .leftJoinAndSelect('shipment.offers', 'offers')
-                .leftJoinAndSelect('shipment.items', 'items')
-                .leftJoin('offers.driver', 'driver')
-                .where('offers.state =:state', { state: 'sent' })
-                .andWhere('shipment.deliveryDate is null')
-                .andWhere('driver.id =:id', { id: person.id })
-                .getMany();
-        }
-        return [];
+    async getActive_driver(driver: Driver): Promise<Shipment[]> {
+        return this.createQueryBuilder('shipment')
+            .leftJoinAndSelect('shipment.offers', 'offers')
+            .leftJoinAndSelect('shipment.items', 'items')
+            .leftJoin('offers.driver', 'driver')
+            .where('offers.state =:state', { state: 'sent' })
+            .andWhere('shipment.deliveryDate is null')
+            .andWhere('driver.id =:id', { id: driver.id })
+            .getMany();
     }
+    async getActive_user(user: User): Promise<Shipment[]> {
+        return this.find({
+            relations: ['user', 'items', 'offers', 'offers.driver'],
+            where: {
+                user: user,
+                deliveryDate: IsNull(),
+                state: SHIPMENT_STATE.confirmed
+            }
+        });
+    }
+
+    async getWaitingOffers(user: User): Promise<Shipment[]> {
+        return this.find({
+            relations: ['user', 'items', 'offers', 'offers.driver'],
+            where: {
+                user: user,
+                state: SHIPMENT_STATE.waiting_offers,
+                shipDate: MoreThanOrEqual(Date.now())
+            }
+        });
+    }
+
+    async getCancelled(user: User): Promise<Shipment[]> {
+        return this.find({
+            relations: ['user', 'items', 'offers', 'offers.driver'],
+            where: {
+                user: user,
+                state: SHIPMENT_STATE.cancelled
+            }
+        });
+    }
+
+    async getDelivered(user: User): Promise<Shipment[]> {
+        return this.find({
+            relations: ['user', 'items', 'offers', 'offers.driver'],
+            where: {
+                user: user,
+                state: SHIPMENT_STATE.confirmed,
+                deliveryDate: Not(null),
+                confirmationDate: Not(null)
+            }
+        });
+    }
+    // async getAllActive(person: Express.User | undefined): Promise<Shipment[]> {
+    //     if (person instanceof User) {
+    //         return this.find({
+    //             relations: ['user', 'items', 'offers', 'offers.driver'],
+    //             where: {
+    //                 user: person,
+    //                 deliveryDate: IsNull(),
+    //                 state: Not('Canceled')
+    //             }
+    //         });
+    //     } else if (person instanceof Driver) {
+    //         return this.createQueryBuilder('shipment')
+    //             .leftJoinAndSelect('shipment.offers', 'offers')
+    //             .leftJoinAndSelect('shipment.items', 'items')
+    //             .leftJoin('offers.driver', 'driver')
+    //             .where('offers.state =:state', { state: 'sent' })
+    //             .andWhere('shipment.deliveryDate is null')
+    //             .andWhere('driver.id =:id', { id: person.id })
+    //             .getMany();
+    //     }
+    //     return [];
+    // }
 }

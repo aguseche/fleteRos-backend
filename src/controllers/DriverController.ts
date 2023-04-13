@@ -8,10 +8,12 @@ import { INewDriver } from '../interfaces/INewDriver';
 import { validateDriver } from '../validations/driverValidator';
 import { StatusCodes } from 'http-status-codes';
 import OfferRepository from '../repositories/OfferRepository';
+import ShipmentRepository from '../repositories/ShipmentRepository';
 
 class DriverController {
     private driverRepository = getCustomRepository(DriverRepository);
     private offerRepository = getCustomRepository(OfferRepository);
+    private shipmentRepository = getCustomRepository(ShipmentRepository);
 
     public signUp = async (req: Request, res: Response): Promise<Response> => {
         const newDriver: INewDriver = req.body;
@@ -130,6 +132,34 @@ class DriverController {
             const driver = req.user as Driver;
             const offers = await this.offerRepository.getDeleted(driver);
             return res.status(StatusCodes.OK).json(offers);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getShipmentsAvailable = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            const shipments = await this.shipmentRepository.getAvailable(
+                driver
+            );
+            return res.status(StatusCodes.OK).json(shipments);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getShipmentsActive = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            const shipments = await this.shipmentRepository.getActive_driver(
+                driver
+            );
+            return res.status(StatusCodes.OK).json(shipments);
         } catch (error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }

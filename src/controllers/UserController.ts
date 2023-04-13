@@ -9,9 +9,12 @@ import { INewUser } from '../interfaces/INewUser';
 import { validateUser } from '../validations/userValidator';
 import { IUserWithoutPassword } from '../interfaces/IUserWithoutPassword';
 import { StatusCodes } from 'http-status-codes';
+import User from '../entities/User';
+import ShipmentRepository from '../repositories/ShipmentRepository';
 
 class UserController {
     private userRepository = getCustomRepository(UserRepository);
+    private shipmentRepository = getCustomRepository(ShipmentRepository);
 
     public signUp = async (req: Request, res: Response): Promise<Response> => {
         const newUser: INewUser = req.body;
@@ -85,6 +88,59 @@ class UserController {
 
     public getMe = (req: Request, res: Response): Response => {
         return res.status(StatusCodes.OK).json(req.user);
+    };
+
+    public getShipmentsWaitingOffers = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const user = req.user as User;
+            const shipments = await this.shipmentRepository.getWaitingOffers(
+                user
+            );
+            return res.status(StatusCodes.OK).json(shipments);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getShipmentsActive = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const user = req.user as User;
+            const shipments = await this.shipmentRepository.getActive_user(
+                user
+            );
+            return res.status(StatusCodes.OK).json(shipments);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getShipmentsCancelled = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const user = req.user as User;
+            const shipments = await this.shipmentRepository.getCancelled(user);
+            return res.status(StatusCodes.OK).json(shipments);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getShipmentsDelivered = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const user = req.user as User;
+            const shipments = await this.shipmentRepository.getDelivered(user);
+            return res.status(StatusCodes.OK).json(shipments);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
     };
 }
 
