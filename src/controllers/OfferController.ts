@@ -12,6 +12,7 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 import { StatusCodes } from 'http-status-codes';
 import { validateOffer } from '../validations/offerValidator';
 import { SHIPMENT_STATE } from '../constants';
+import { validateState } from '../validations/offerValidators/stateValidator';
 
 class OfferController {
     private offerRepository = getCustomRepository(OfferRepository);
@@ -47,7 +48,7 @@ class OfferController {
             const offer = new Offer();
             offer.driver = driver;
             offer.price = Number(req.body.offer.price);
-            offer.state = 'sent';
+            offer.state = OFFER_STATE.sent;
             offer.shipment = shipment;
             //Valida la oferta
             if (!validateOffer(offer)) {
@@ -147,21 +148,31 @@ class OfferController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        //Busca las ofertas (ya sea User o Driver) validando que
+        //Busca las ofertas (ya sea User o Driver) validando que tenga el mismo state que se le indica
+        //Devuelve Offer con su Shipment
+
+        //Comentado por ahora
         //updatedDate >= hoy - 3 dias -> No se porque esto pero lo deje
         //deliveryDate IS NULL
-        //state != Cancelled
-        //Devuelve Offer con su Shipment
+
+        const state = req.body.state;
         const date = new Date();
         date.setDate(date.getDate() - DAYS_SINCE_UPDATED);
         try {
+            if (!validateState(state)) {
+                throw new Error('Invalid State');
+            }
             const offers: Offer[] = await this.offerRepository.getOffers(
                 req.user,
                 date,
-                OFFER_STATE.cancelled
+                state
             );
             return res.status(StatusCodes.OK).json(offers);
         } catch (error) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };

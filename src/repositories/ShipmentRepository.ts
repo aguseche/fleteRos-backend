@@ -4,6 +4,7 @@ import Shipment from '../entities/Shipment';
 import Item from '../entities/Item';
 import User from '../entities/User';
 import Driver from '../entities/Driver';
+import { SHIPMENT_STATE } from '../constants';
 
 @EntityRepository(Shipment)
 export default class ShipmentRepository extends Repository<Shipment> {
@@ -32,7 +33,9 @@ export default class ShipmentRepository extends Repository<Shipment> {
             .leftJoin('shipment.offers', 'offers')
             .where('shipment.shipDate >= :now', { now: Date.now() })
             .andWhere('shipment.confirmationDate IS NULL')
-            .andWhere('shipment.state =:state', { state: 'Waiting Offers' })
+            .andWhere('shipment.state =:state', {
+                state: SHIPMENT_STATE.waiting_offers
+            })
             .andWhere(`shipment.id NOT IN (${subQuery})`)
             .setParameter('driverId', driver.id)
             .getMany();

@@ -7,9 +7,11 @@ import Driver from '../entities/Driver';
 import { INewDriver } from '../interfaces/INewDriver';
 import { validateDriver } from '../validations/driverValidator';
 import { StatusCodes } from 'http-status-codes';
+import OfferRepository from '../repositories/OfferRepository';
 
 class DriverController {
     private driverRepository = getCustomRepository(DriverRepository);
+    private offerRepository = getCustomRepository(OfferRepository);
 
     public signUp = async (req: Request, res: Response): Promise<Response> => {
         const newDriver: INewDriver = req.body;
@@ -66,11 +68,72 @@ class DriverController {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
-    public signOut = (req: Request, res: Response): Response => {
+    public signOut = async (req: Request, res: Response): Promise<Response> => {
         // req.logout();
-        return res.status(StatusCodes.OK).json({ msg: 'success' });
+        return res.status(StatusCodes.OK).json('success');
     };
     //porque no tengo un getme aca ?
+
+    public getOffersSent = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            const offers = await this.offerRepository.getSent(driver);
+            return res.status(StatusCodes.OK).json(offers);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getOffersAccepted = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            const offers = await this.offerRepository.getAccepted(driver);
+            return res.status(StatusCodes.OK).json(offers);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getOffersDelivered = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            const offers = await this.offerRepository.getDelivered(driver);
+            return res.status(StatusCodes.OK).json(offers);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getOffersCancelled = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            const offers = await this.offerRepository.getCancelled(driver);
+            return res.status(StatusCodes.OK).json(offers);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getOffersDeleted = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            const offers = await this.offerRepository.getDeleted(driver);
+            return res.status(StatusCodes.OK).json(offers);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
 }
 
 export default DriverController;

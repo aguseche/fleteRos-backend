@@ -15,6 +15,36 @@ class driverRouter {
             driver_validation,
             this.driverController.signOut
         );
+        this.router.get(
+            '/driver/offers/sent',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getOffersSent
+        );
+        this.router.get(
+            '/driver/offers/accepted',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getOffersAccepted
+        );
+        this.router.get(
+            '/driver/offers/delivered',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getOffersDelivered
+        );
+        this.router.get(
+            '/driver/offers/deleted',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getOffersDeleted
+        );
+        this.router.get(
+            '/driver/offers/cancelled',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getOffersCancelled
+        );
     }
 }
 
