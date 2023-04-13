@@ -40,14 +40,6 @@ export default class User {
     @Column('varchar', { name: 'password', length: 32, select: false })
     password: string;
 
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    @BeforeInsert()
-    @BeforeUpdate()
-    hashPassword() {
-        if (this.password) {
-            this.password = md5(this.password);
-        }
-    }
     @Column('timestamp', { name: 'birthDate' })
     birthDate: Date;
 

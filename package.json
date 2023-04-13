@@ -15,6 +15,7 @@
     "date-fns": "^2.28.0",
     "dotenv-flow": "^3.2.0",
     "express": "^4.17.2",
+    "http-status-codes": "^2.2.0",
     "jsonwebtoken": "^8.5.1",
     "md5": "^2.3.0",
     "morgan": "^1.10.0",
@@ -38,7 +39,7 @@
     "@types/passport": "^1.0.7",
     "@types/passport-jwt": "^3.0.6",
     "concurrently": "^7.0.0",
-    "eslint": "^7.2.0",
+    "eslint": "^7.32.0",
     "eslint-config-airbnb": "^18.2.0",
     "eslint-config-airbnb-typescript": "^8.0.2",
     "eslint-config-prettier": "^6.11.0",
@@ -48,6 +49,6 @@
     "eslint-plugin-react": "^7.20.0",
     "eslint-plugin-react-hooks": "^4.0.0",
     "nodemon": "^2.0.15",
-    "prettier": "^2.0.5"
+    "prettier": "^2.8.4"
   }
 }

@@ -25,7 +25,7 @@ const strategy = new Strategy(opts, async (payload, done) => {
         }
         return done(null, false);
     } catch (error) {
-        return done(error, null);
+        return done(error, undefined);
     }
 });
 

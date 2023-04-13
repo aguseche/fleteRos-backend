@@ -1,83 +1,90 @@
 import { Request, Response } from 'express';
 import { getCustomRepository } from 'typeorm';
 import md5 from 'md5';
-import jwt from 'jsonwebtoken';
 
 import UserRepository from '../repositories/UserRepository';
-import User from '../entities/User';
+// import User from '../entities/User';
+import AuthController from './AuthController';
+import { INewUser } from '../interfaces/INewUser';
+import { validateUser } from '../validations/userValidator';
+import { IUserWithoutPassword } from '../interfaces/IUserWithoutPassword';
+import { StatusCodes } from 'http-status-codes';
 
 class UserController {
     private userRepository = getCustomRepository(UserRepository);
 
-    private static createToken(user: User) {
-        return jwt.sign(
-            { id: user.id, username: user.email },
-            process.env.JWTSECRET
-                ? process.env.JWTSECRET
-                : 'BNR8SM&dKn6cIUA#dP%7sF&$oErml5xb',
-            {
-                expiresIn: process.env.TOKEN_EXPIRATION_TIME // 1 dia
-            }
-        );
-    }
-
     public signUp = async (req: Request, res: Response): Promise<Response> => {
-        if (!req.body.email || !req.body.password) {
-            return res.status(400).json({
-                error: 'Please. Send your email and password'
-            });
+        const newUser: INewUser = req.body;
+        if (!validateUser(newUser)) {
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json({ error: 'Please. Send a valid email and password' });
         }
-
         try {
-            const user = await this.userRepository.findByEmail(req.body.email);
-
-            if (user) {
-                return res.status(400).json({ error: 'Email already exists' });
+            const oldUser = await this.userRepository.findByEmail(
+                newUser.email
+            );
+            if (oldUser) {
+                return res
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Email already exists' });
             }
 
-            let newUser = new User();
-            newUser = req.body;
+            //Revisar hash y pasarlo a bycript
             newUser.password = md5(newUser.password);
-            await this.userRepository.save(newUser);
-            newUser.password = '';
-            return res.status(201).json(newUser);
+
+            const userWithoutPassword: IUserWithoutPassword =
+                await this.userRepository.createUser(newUser);
+
+            return res.status(StatusCodes.CREATED).json(userWithoutPassword);
         } catch (error) {
-            return res.status(500).json(error);
+            throw new Error('Failed to retrieve driver from the database');
         }
     };
+
     public signIn = async (req: Request, res: Response): Promise<Response> => {
-        if (!req.body.email || !req.body.password) {
+        const loginUser: INewUser = req.body;
+        if (!validateUser(loginUser)) {
             return res
-                .status(400)
+                .status(StatusCodes.BAD_REQUEST)
                 .json({ error: 'Email and Password required' });
         }
         try {
+            //hay que cambiar esta forma de autenticacion, esta horrible
             const user = await this.userRepository.authenticate(
-                req.body.email,
-                md5(req.body.password)
+                loginUser.email,
+                md5(loginUser.password)
             );
 
-            if (user) {
-                user.password = '';
-                const token = UserController.createToken(user);
-                return res.status(200).json({ user, token });
+            if (!user) {
+                return res
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({ error: 'Email or password incorrect' });
             }
 
-            return res
-                .status(400)
-                .json({ error: 'Email or password incorrect' });
+            user.password = '';
+            const token = AuthController.createToken(user);
+            return res.status(StatusCodes.OK).json({ user, token });
         } catch (error) {
             console.log(error);
-            return res.status(500).json(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
     public signOut = (req: Request, res: Response): Response => {
-        req.logout();
-        return res.status(200).json({ msg: 'success' });
+        //esto no desloguea, no borra el token
+        req.logout(function (err) {
+            if (err) {
+                return res
+                    .status(StatusCodes.INTERNAL_SERVER_ERROR)
+                    .json({ msg: 'Error deleting session' });
+            }
+        });
+        console.log(req);
+        return res.status(StatusCodes.OK).json({ msg: 'success' });
     };
 
     public getMe = (req: Request, res: Response): Response => {
-        return res.status(200).json(req.user);
+        return res.status(StatusCodes.OK).json(req.user);
     };
 }
 

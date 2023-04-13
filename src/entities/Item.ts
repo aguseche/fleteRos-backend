@@ -19,16 +19,22 @@ export default class Item {
     @Column('decimal', { name: 'weight', precision: 10, scale: 2 })
     weight: number;
 
-    @Column({ name: 'size', length: 50 })
-    size: string;
+    @Column({ type: 'int', name: 'height' })
+    height: number;
+
+    @Column({ type: 'int', name: 'width' })
+    width: number;
+
+    @Column({ type: 'int', name: 'depth' })
+    depth: number;
 
     @Column({ type: 'int', name: 'quantity' })
     quantity: number;
 
-    @Column({ name: 'image_1', length: 50 })
+    @Column({ name: 'image_1', length: 50, nullable: true, default: null })
     image_1: string;
 
-    @Column({ name: 'image_2', length: 50 })
+    @Column({ name: 'image_2', length: 50, nullable: true, default: null })
     image_2: string;
 
     @ManyToOne(() => Shipment, {
@@ -37,4 +43,8 @@ export default class Item {
     })
     @JoinColumn({ name: 'idShipment', referencedColumnName: 'id' })
     shipment: Shipment;
+
+    constructor(partial: Partial<Item> = {}) {
+        Object.assign(this, partial);
+    }
 }

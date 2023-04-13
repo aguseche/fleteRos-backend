@@ -5,16 +5,12 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 import Item from '../entities/Item';
 import User from '../entities/User';
 import Shipment from '../entities/Shipment';
+import { IItem } from '../interfaces/IItem';
+import { StatusCodes } from 'http-status-codes';
+import { validateItem } from '../validations/itemValidator';
+import { validateShipment } from '../validations/shipmentValidator';
 import Driver from '../entities/Driver';
-
-interface IItem {
-    description: string;
-    weight: number;
-    size: string;
-    quantity: number;
-    image_1: string;
-    image_2: string;
-}
+import { SHIPMENT_STATE } from '../constants';
 class ShipmentController {
     private shipmentRepository = getCustomRepository(ShipmentRepository);
 
@@ -22,38 +18,63 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        if (!req.body.items) {
-            return res.status(404).json('Must have at least one item');
-        }
-        const interfaceitems = req.body.items as IItem[];
+        const interfaceItems = req.body.items as IItem[];
         const user = req.user as User;
-        const shipment = new Shipment();
-        shipment.user = user;
-        shipment.state = 'Waiting Offers';
-        shipment.shipDate = req.body.shipment.shipDate;
-        shipment.locationFrom = req.body.shipment.locationFrom;
-        shipment.locationTo = req.body.shipment.locationTo;
-        const items: Item[] = [];
-        interfaceitems.forEach(
-            ({ description, weight, size, quantity, image_1, image_2 }) => {
-                const newItem = new Item();
-                newItem.description = description;
-                newItem.weight = weight;
-                newItem.size = size;
-                newItem.quantity = quantity;
-                newItem.image_1 = image_1;
-                newItem.image_2 = image_2;
-                items.push(newItem);
-            }
-        );
+
+        if (!interfaceItems || interfaceItems.length === 0) {
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('Must have at least one item');
+        }
         try {
+            const items: Item[] = interfaceItems.map(
+                ({
+                    description,
+                    weight,
+                    height,
+                    width,
+                    depth,
+                    quantity,
+                    image_1,
+                    image_2
+                }) => {
+                    const newItem = new Item({
+                        description,
+                        weight,
+                        height,
+                        width,
+                        depth,
+                        quantity,
+                        image_1,
+                        image_2
+                    });
+                    if (!validateItem(newItem)) {
+                        throw new Error('Invalid Item');
+                    }
+                    return newItem;
+                }
+            );
+            const shipment = new Shipment({
+                user,
+                state: SHIPMENT_STATE.waiting_offers,
+                shipDate: new Date(req.body.shipment.shipDate),
+                locationFrom: req.body.shipment.locationFrom,
+                locationTo: req.body.shipment.locationTo
+            });
+            if (!validateShipment(shipment)) {
+                throw new Error('Invalid Shipment');
+            }
             await this.shipmentRepository.registerShipment(shipment, items);
-            return res.status(200).json({ status: 'success' });
-        } catch (error) {
-            return res.status(500).json(error);
+            return res.status(StatusCodes.CREATED).json({ status: 'success' });
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
-    public getAvailableShipments = async (
+    public getAvailable = async (
         req: Request,
         res: Response
     ): Promise<Response> => {
@@ -62,15 +83,14 @@ class ShipmentController {
         Por disponible decimos:
         -shipDate >= hoy
         -confirmationDate null
+        -No fue ofertado por el driver
         */
         const driver = req.user as Driver;
-        const shipments = await this.shipmentRepository.getAvailableShipments(
-            driver
-        );
+        const shipments = await this.shipmentRepository.getAvailable(driver);
         if (shipments === undefined) {
-            return res.status(200).json('No shipments available');
+            return res.status(StatusCodes.OK).json('No shipments available');
         }
-        return res.status(200).json(shipments);
+        return res.status(StatusCodes.OK).json(shipments);
     };
 
     public updateShipment = async (
@@ -85,18 +105,20 @@ class ShipmentController {
             }
         });
         if (!oldShipment) {
-            return res.status(403).json('Invalid shipment id');
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('Invalid shipment id');
         }
         try {
             this.shipmentRepository.merge(oldShipment, req.body.shipment);
             await this.shipmentRepository.save(oldShipment);
-            return res.status(200).json('Success');
+            return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
-            return res.status(500).json(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
 
-    public getMyShipments = async (
+    public getAllActive = async (
         req: Request,
         res: Response
     ): Promise<Response> => {
@@ -107,20 +129,50 @@ class ShipmentController {
         Si es driver:
         -Estan confirmados, pertenecen al driver y deliveryDate es null
         */
-        let shipments: Shipment[] = [];
-        if (req.user instanceof User) {
-            shipments = await this.shipmentRepository.getMyShipments_User(
-                req.user
-            );
-        } else if (req.user instanceof Driver) {
-            shipments = await this.shipmentRepository.getMyShipments_Driver(
-                req.user
-            );
+        try {
+            const shipments: Shipment[] =
+                await this.shipmentRepository.getAllActive(req.user);
+            return res.status(StatusCodes.OK).json(shipments);
+        } catch (error) {
+            console.log(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
-        if (!shipments) {
-            return res.status(403).json('This user has no shipments');
+    };
+    public deleteShipment = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const shipment = await this.shipmentRepository.findOne({
+                relations: ['user'],
+                where: {
+                    user: req.user,
+                    id: req.body.id
+                }
+            });
+            if (!shipment) {
+                throw new Error('Invalid shipment id');
+            }
+            // if (shipment.state === SHIPMENT_STATE.confirmed) {
+            //     //agregar RN
+            //     throw new Error('Shipment state confirmed or cancelled');
+            // }
+            if (shipment.state !== SHIPMENT_STATE.waiting_offers) {
+                throw new Error('Shipment state confirmed or cancelled');
+            }
+            shipment.state = SHIPMENT_STATE.cancelled;
+            if (!validateShipment(shipment)) {
+                throw new Error('Invalid Shipment');
+            }
+            await this.shipmentRepository.save(shipment);
+            return res.status(StatusCodes.OK).json('Success');
+        } catch (error) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
-        return res.status(200).json(shipments);
     };
 }
 

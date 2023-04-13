@@ -48,4 +48,8 @@ export default class Shipment {
 
     @OneToMany(() => Offer, offer => offer.shipment)
     offers: Offer[];
+
+    constructor(partial: Partial<Shipment> = {}) {
+        Object.assign(this, partial);
+    }
 }
