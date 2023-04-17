@@ -104,6 +104,47 @@ class OfferController {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
+    public cancelOffer = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const user = req.user as User;
+        if (!req.user || !req.body.id) {
+            throw new Error('You are missing user or offer id');
+        }
+        try {
+            const offer = await this.offerRepository.findOne({
+                relations: ['shipment', 'shipment.user'],
+                where: {
+                    id: req.body.id,
+                    shipment: {
+                        user: user
+                    }
+                }
+            });
+            //Valida que exista la oferta (relacion Shipment - User)
+            if (!offer) {
+                throw new Error('Invalid Offer');
+            }
+            //Valida que la oferta no este confirmada
+            if (offer.state !== OFFER_STATE.sent) {
+                throw new Error('Offer state is not "SENT"');
+            }
+            offer.state = OFFER_STATE.cancelled;
+            //Valida la oferta en general
+            if (!validateOffer(offer)) {
+                throw new Error('Invalid Offer');
+            }
+            await this.offerRepository.save(offer);
+            return res.status(StatusCodes.OK).json('Success');
+        } catch (error) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
 
     public deleteOffer = async (
         req: Request,
