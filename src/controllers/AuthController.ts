@@ -4,6 +4,7 @@ import Driver from '../entities/Driver';
 import jwt from 'jsonwebtoken';
 
 import { StatusCodes } from 'http-status-codes';
+import { TOKEN_EXPIRATION_TIME } from '../constants';
 class AuthController {
     public getMe = (req: Request, res: Response): Response => {
         return res.status(StatusCodes.OK).json(req.user);
@@ -16,7 +17,7 @@ class AuthController {
                 ? process.env.JWTSECRET
                 : 'BNR8SM&dKn6cIUA#dP%7sF&$oErml5xb',
             {
-                expiresIn: process.env.TOKEN_EXPIRATION_TIME // 1 dia
+                expiresIn: TOKEN_EXPIRATION_TIME
             }
         );
     }

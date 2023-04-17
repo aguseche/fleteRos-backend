@@ -10,7 +10,7 @@ class UserRouter {
     constructor() {
         this.router.post('/user/signup', this.userController.signUp);
         this.router.post('/user/signin', this.userController.signIn);
-        this.router.get(
+        this.router.post(
             '/user/signout',
             passport.authenticate('jwt', { session: false }),
             user_validation,

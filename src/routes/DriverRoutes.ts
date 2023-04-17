@@ -9,7 +9,7 @@ class driverRouter {
     constructor() {
         this.router.post('/driver/signup', this.driverController.signUp);
         this.router.post('/driver/signin', this.driverController.signIn);
-        this.router.get(
+        this.router.post(
             '/driver/signout',
             passport.authenticate('jwt', { session: false }),
             driver_validation,
