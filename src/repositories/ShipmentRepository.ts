@@ -24,6 +24,16 @@ export default class ShipmentRepository extends Repository<Shipment> {
             await transactionalManager.save(Item, itemsToSave);
         });
     }
+    async getWithDriver(
+        id: number,
+        driver: Driver
+    ): Promise<Shipment | undefined> {
+        return await this.createQueryBuilder('shipment')
+            .leftJoin('shipment.offers', 'offers')
+            .where('offers.driver.id = :driverId', { driverId: driver.id })
+            .andWhere('shipment.id = :shipmentId', { shipmentId: id })
+            .getOne();
+    }
     async getAvailable(driver: Driver): Promise<Shipment[] | undefined> {
         //Devuelve los shipments disponibles al dia de la fecha que no hayan sido ofertados por el driver
         //Por disponible se entiende que no estan confirmados ni eliminados, su estado es 'Waiting Offers'
@@ -100,26 +110,26 @@ export default class ShipmentRepository extends Repository<Shipment> {
             }
         });
     }
-    // async getAllActive(person: Express.User | undefined): Promise<Shipment[]> {
-    //     if (person instanceof User) {
-    //         return this.find({
-    //             relations: ['user', 'items', 'offers', 'offers.driver'],
-    //             where: {
-    //                 user: person,
-    //                 deliveryDate: IsNull(),
-    //                 state: Not('Canceled')
-    //             }
-    //         });
-    //     } else if (person instanceof Driver) {
-    //         return this.createQueryBuilder('shipment')
-    //             .leftJoinAndSelect('shipment.offers', 'offers')
-    //             .leftJoinAndSelect('shipment.items', 'items')
-    //             .leftJoin('offers.driver', 'driver')
-    //             .where('offers.state =:state', { state: 'sent' })
-    //             .andWhere('shipment.deliveryDate is null')
-    //             .andWhere('driver.id =:id', { id: person.id })
-    //             .getMany();
-    //     }
-    //     return [];
-    // }
+    async getAllActive(person: Express.User | undefined): Promise<Shipment[]> {
+        if (person instanceof User) {
+            return this.find({
+                relations: ['user', 'items', 'offers', 'offers.driver'],
+                where: {
+                    user: person,
+                    deliveryDate: IsNull(),
+                    state: Not('Canceled')
+                }
+            });
+        } else if (person instanceof Driver) {
+            return this.createQueryBuilder('shipment')
+                .leftJoinAndSelect('shipment.offers', 'offers')
+                .leftJoinAndSelect('shipment.items', 'items')
+                .leftJoin('offers.driver', 'driver')
+                .where('offers.state =:state', { state: 'sent' })
+                .andWhere('shipment.deliveryDate is null')
+                .andWhere('driver.id =:id', { id: person.id })
+                .getMany();
+        }
+        return [];
+    }
 }

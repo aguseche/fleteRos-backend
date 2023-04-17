@@ -117,6 +117,83 @@ class ShipmentController {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
+    public deliverShipment = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const driver = req.user as Driver;
+            if (!driver || !req.body.id) {
+                throw new Error('You are missing driver or shipment id');
+            }
+            const shipment = await this.shipmentRepository.getWithDriver(
+                req.body.id,
+                driver
+            );
+            if (!shipment) {
+                throw new Error('Invalid shipment id');
+            }
+            if (shipment.state !== SHIPMENT_STATE.confirmed) {
+                throw new Error(
+                    'You can not deliver a shipment that is not confirmed '
+                );
+            }
+            if (shipment.deliveryDate) {
+                throw new Error('Shipment already delivered');
+            }
+            shipment.deliveryDate = new Date();
+            await this.shipmentRepository.save(shipment);
+            return res.status(StatusCodes.OK).json('Success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public receiveShipment = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            if (!req.user || !req.body.id) {
+                throw new Error('You are missing user or shipment id');
+            }
+            const shipment = await this.shipmentRepository.findOne({
+                relations: ['user'],
+                where: {
+                    user: req.user,
+                    id: req.body.id
+                }
+            });
+            if (!shipment) {
+                throw new Error('Invalid shipment id');
+            }
+            if (shipment.state !== SHIPMENT_STATE.confirmed) {
+                throw new Error(
+                    'You can not receive a shipment that is not confirmed '
+                );
+            }
+            if (!shipment.deliveryDate) {
+                throw new Error(
+                    'You can not receive a shipment that does not have a delivery date '
+                );
+            }
+            if (shipment.confirmationDate) {
+                throw new Error('Shipment already received');
+            }
+            shipment.confirmationDate = new Date();
+            await this.shipmentRepository.save(shipment);
+            return res.status(StatusCodes.OK).json('Success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
 
     public getAllActive = async (
         req: Request,
