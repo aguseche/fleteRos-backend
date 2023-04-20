@@ -9,6 +9,8 @@ import { validateDriver } from '../validations/driverValidator';
 import { StatusCodes } from 'http-status-codes';
 import OfferRepository from '../repositories/OfferRepository';
 import ShipmentRepository from '../repositories/ShipmentRepository';
+import registrationEmail from '../templates/registrationEmail';
+import Mailer from '../utils/mailer';
 
 class DriverController {
     private driverRepository = getCustomRepository(DriverRepository);
@@ -37,6 +39,22 @@ class DriverController {
             newDriver.password = md5(newDriver.password);
             await this.driverRepository.save(newDriver);
             newDriver.password = '';
+
+            //Send mail
+            const template = registrationEmail(
+                // newDriver.name,
+                // newDriver.lastname,
+                '',
+                '',
+                'Driver'
+            );
+            const mailer = new Mailer();
+            await mailer.sendMail(
+                newDriver.email,
+                'Registro Exitoso',
+                template.html
+            );
+
             return res.status(StatusCodes.CREATED).json(newDriver);
         } catch (error) {
             throw new Error('Failed to retrieve driver from the database');

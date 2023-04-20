@@ -4,7 +4,7 @@ import Driver from '../entities/Driver';
 import jwt from 'jsonwebtoken';
 
 import { StatusCodes } from 'http-status-codes';
-import { TOKEN_EXPIRATION_TIME } from '../constants';
+import { TOKEN_EXPIRATION_TIME } from '../utils/constants';
 class AuthController {
     public getMe = (req: Request, res: Response): Response => {
         return res.status(StatusCodes.OK).json(req.user);

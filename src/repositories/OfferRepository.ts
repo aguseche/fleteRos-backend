@@ -11,7 +11,7 @@ import Shipment from '../entities/Shipment';
 import Offer from '../entities/Offer';
 import User from '../entities/User';
 import Driver from '../entities/Driver';
-import { OFFER_STATE, SHIPMENT_STATE } from '../constants';
+import { OFFER_STATE, SHIPMENT_STATE } from '../utils/constants';
 
 @EntityRepository(Offer)
 export default class OfferRepository extends Repository<Offer> {

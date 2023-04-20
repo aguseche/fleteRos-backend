@@ -1,18 +1,25 @@
 import { Request, Response } from 'express';
 import { getCustomRepository } from 'typeorm';
 
-import ShipmentRepository from '../repositories/ShipmentRepository';
 import Item from '../entities/Item';
 import User from '../entities/User';
+import Driver from '../entities/Driver';
 import Shipment from '../entities/Shipment';
 import { IItem } from '../interfaces/IItem';
+
 import { StatusCodes } from 'http-status-codes';
+import { SHIPMENT_STATE } from '../utils/constants';
+import basic_template from '../templates/basic_template';
+import Mailer from '../utils/mailer';
+
+import DriverRepository from '../repositories/DriverRepository';
+import ShipmentRepository from '../repositories/ShipmentRepository';
 import { validateItem } from '../validations/itemValidator';
 import { validateShipment } from '../validations/shipmentValidator';
-import Driver from '../entities/Driver';
-import { SHIPMENT_STATE } from '../constants';
+
 class ShipmentController {
     private shipmentRepository = getCustomRepository(ShipmentRepository);
+    private driverRepository = getCustomRepository(DriverRepository);
 
     public registerShipment = async (
         req: Request,
@@ -142,7 +149,34 @@ class ShipmentController {
                 throw new Error('Shipment already delivered');
             }
             shipment.deliveryDate = new Date();
-            await this.shipmentRepository.save(shipment);
+            // await this.shipmentRepository.save(shipment);
+
+            //Send mail
+            //user
+            const template = basic_template(
+                shipment.user.name,
+                shipment.user.lastname,
+                'Shipment Delivered'
+            );
+            const mailer = new Mailer();
+            await mailer.sendMail(
+                shipment.user.email,
+                'You have received your shipment ! please confirm it.',
+                template.html
+            );
+
+            //driver
+            const template_2 = basic_template(
+                driver.name,
+                driver.lastname,
+                'You have delivered the shipment succesfully. Wait for the user confirmation'
+            );
+            await mailer.sendMail(
+                shipment.user.email,
+                'Shipment Delivered',
+                template_2.html
+            );
+
             return res.status(StatusCodes.OK).json('Success');
         } catch (error: unknown) {
             console.log(error);
@@ -185,6 +219,19 @@ class ShipmentController {
             }
             shipment.confirmationDate = new Date();
             await this.shipmentRepository.save(shipment);
+            //Send mail
+            const template = basic_template(
+                shipment.user.name,
+                shipment.user.lastname,
+                'Shipment Reception Confirmed'
+            );
+            const mailer = new Mailer();
+            await mailer.sendMail(
+                shipment.user.email,
+                'You have conmfirmed the reception of your shipment succesfully',
+                template.html
+            );
+
             return res.status(StatusCodes.OK).json('Success');
         } catch (error: unknown) {
             console.log(error);

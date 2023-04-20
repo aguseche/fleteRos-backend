@@ -10,7 +10,7 @@ import Shipment from '../entities/Shipment';
 import Item from '../entities/Item';
 import User from '../entities/User';
 import Driver from '../entities/Driver';
-import { SHIPMENT_STATE } from '../constants';
+import { OFFER_STATE, SHIPMENT_STATE } from '../utils/constants';
 
 @EntityRepository(Shipment)
 export default class ShipmentRepository extends Repository<Shipment> {
@@ -29,6 +29,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
         driver: Driver
     ): Promise<Shipment | undefined> {
         return await this.createQueryBuilder('shipment')
+            .leftJoinAndSelect('shipment.user', 'user')
             .leftJoin('shipment.offers', 'offers')
             .where('offers.driver.id = :driverId', { driverId: driver.id })
             .andWhere('shipment.id = :shipmentId', { shipmentId: id })
@@ -62,7 +63,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
             .leftJoinAndSelect('shipment.offers', 'offers')
             .leftJoinAndSelect('shipment.items', 'items')
             .leftJoin('offers.driver', 'driver')
-            .where('offers.state =:state', { state: 'sent' })
+            .where('offers.state =:state', { state: OFFER_STATE.sent })
             .andWhere('shipment.deliveryDate is null')
             .andWhere('driver.id =:id', { id: driver.id })
             .getMany();
@@ -110,6 +111,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
             }
         });
     }
+
     async getAllActive(person: Express.User | undefined): Promise<Shipment[]> {
         if (person instanceof User) {
             return this.find({

@@ -16,17 +16,17 @@ export default class User {
     id: number;
 
     @Column('varchar', { name: 'name', length: 50 })
-    name: string | null;
+    name: string;
 
     @Column('varchar', { name: 'lastname', length: 50 })
-    lastname: string | null;
+    lastname: string;
 
     @Column('varchar', {
         name: 'email',
         unique: true,
         length: 150
     })
-    email: string | null;
+    email: string;
 
     @Column('varchar', { name: 'phone', nullable: true, length: 20 })
     phone: string | null;

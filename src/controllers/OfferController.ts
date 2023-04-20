@@ -1,17 +1,22 @@
 import { Request, Response } from 'express';
 import { getCustomRepository, IsNull, MoreThan, Not } from 'typeorm';
 
-import { DAYS_SINCE_UPDATED, OFFER_STATE } from '../constants';
+import { StatusCodes } from 'http-status-codes';
+import {
+    SHIPMENT_STATE,
+    DAYS_SINCE_UPDATED,
+    OFFER_STATE
+} from '../utils/constants';
+import Mailer from '../utils/mailer';
+import offer_template from '../templates/offer_template';
 
 import Driver from '../entities/Driver';
 import Offer from '../entities/Offer';
 import User from '../entities/User';
+
 import OfferRepository from '../repositories/OfferRepository';
 import ShipmentRepository from '../repositories/ShipmentRepository';
-
-import { StatusCodes } from 'http-status-codes';
 import { validateOffer } from '../validations/offerValidator';
-import { SHIPMENT_STATE } from '../constants';
 import { validateState } from '../validations/offerValidators/stateValidator';
 
 class OfferController {
@@ -25,7 +30,10 @@ class OfferController {
         try {
             const driver = req.user as Driver;
             //validar que exista el shipment
-            const shipment = await this.shipmentRepository.findOne(req.body.id);
+            const shipment = await this.shipmentRepository.findOne(
+                req.body.id,
+                { relations: ['user'] }
+            );
             if (!shipment) {
                 throw new Error('Invalid shipment id');
             }
@@ -55,6 +63,21 @@ class OfferController {
                 throw new Error('Invalid Offer');
             }
             await this.offerRepository.save(offer);
+            //Send mail
+            const template = offer_template(
+                shipment.user.name,
+                shipment.user.lastname,
+                offer.price,
+                shipment,
+                'You have received a new Offer for your shipment. Here you have the details'
+            );
+            const mailer = new Mailer();
+            await mailer.sendMail(
+                shipment.user.email,
+                'New Offer Received',
+                template.html
+            );
+
             return res.status(StatusCodes.OK).json({ status: 'success' });
         } catch (error) {
             console.log(error);
@@ -95,6 +118,22 @@ class OfferController {
                 throw new Error('Invalid Offer');
             }
             await this.offerRepository.saveOffer(offer, offer.shipment);
+
+            //Send mail
+            const template = offer_template(
+                offer.shipment.user.name,
+                offer.shipment.user.lastname,
+                offer.price,
+                offer.shipment,
+                'Your offer has been accepted !'
+            );
+            const mailer = new Mailer();
+            await mailer.sendMail(
+                offer.shipment.user.email,
+                'Offer Accepted',
+                template.html
+            );
+
             return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
             console.log(error);
