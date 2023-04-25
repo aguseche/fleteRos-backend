@@ -13,6 +13,7 @@ import User from '../entities/User';
 import ShipmentRepository from '../repositories/ShipmentRepository';
 import Mailer from '../utils/mailer';
 import registrationEmail from '../templates/registrationEmail';
+import { SEND_MAIL } from '../utils/constants';
 
 class UserController {
     private userRepository = getCustomRepository(UserRepository);
@@ -41,18 +42,19 @@ class UserController {
             const userWithoutPassword: IUserWithoutPassword =
                 await this.userRepository.createUser(newUser);
             //Send mail
-            const template = registrationEmail(
-                userWithoutPassword.name,
-                userWithoutPassword.lastname,
-                'User'
-            );
-            const mailer = new Mailer();
-            await mailer.sendMail(
-                newUser.email,
-                'Registro Exitoso',
-                template.html
-            );
-
+            if (SEND_MAIL) {
+                const template = registrationEmail(
+                    userWithoutPassword.name,
+                    userWithoutPassword.lastname,
+                    'User'
+                );
+                const mailer = new Mailer();
+                await mailer.sendMail(
+                    newUser.email,
+                    'Registro Exitoso',
+                    template.html
+                );
+            }
             return res.status(StatusCodes.CREATED).json(userWithoutPassword);
         } catch (error) {
             throw new Error('Failed to retrieve driver from the database');

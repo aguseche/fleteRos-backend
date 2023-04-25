@@ -10,6 +10,7 @@ import Shipment from '../entities/Shipment';
 import Item from '../entities/Item';
 import User from '../entities/User';
 import Driver from '../entities/Driver';
+import Offer from '../entities/Offer';
 import { OFFER_STATE, SHIPMENT_STATE } from '../utils/constants';
 
 @EntityRepository(Shipment)
@@ -24,6 +25,14 @@ export default class ShipmentRepository extends Repository<Shipment> {
             await transactionalManager.save(Item, itemsToSave);
         });
     }
+
+    async deliverShipment(shipment: Shipment, offer: Offer): Promise<void> {
+        return this.manager.transaction(async transactionalManager => {
+            await transactionalManager.save(shipment);
+            await transactionalManager.save(offer);
+        });
+    }
+
     async getWithDriver(
         id: number,
         driver: Driver

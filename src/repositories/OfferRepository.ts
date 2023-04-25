@@ -21,6 +21,19 @@ export default class OfferRepository extends Repository<Offer> {
             await transactionalManager.save(shipment);
         });
     }
+
+    async getConfirmedbyShipment(
+        shipment: Shipment
+    ): Promise<Offer | undefined> {
+        return await this.findOne({
+            relations: ['shipment'],
+            where: {
+                state: OFFER_STATE.confirmed,
+                shipment: shipment
+            }
+        });
+    }
+
     async getOffers(
         person: Express.User | undefined,
         dt: Date,

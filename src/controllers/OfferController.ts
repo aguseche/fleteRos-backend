@@ -5,7 +5,8 @@ import { StatusCodes } from 'http-status-codes';
 import {
     SHIPMENT_STATE,
     DAYS_SINCE_UPDATED,
-    OFFER_STATE
+    OFFER_STATE,
+    SEND_MAIL
 } from '../utils/constants';
 import Mailer from '../utils/mailer';
 import offer_template from '../templates/offer_template';
@@ -64,20 +65,21 @@ class OfferController {
             }
             await this.offerRepository.save(offer);
             //Send mail
-            const template = offer_template(
-                shipment.user.name,
-                shipment.user.lastname,
-                offer.price,
-                shipment,
-                'You have received a new Offer for your shipment. Here you have the details'
-            );
-            const mailer = new Mailer();
-            await mailer.sendMail(
-                shipment.user.email,
-                'New Offer Received',
-                template.html
-            );
-
+            if (SEND_MAIL) {
+                const template = offer_template(
+                    shipment.user.name,
+                    shipment.user.lastname,
+                    offer.price,
+                    shipment,
+                    'You have received a new Offer for your shipment. Here you have the details'
+                );
+                const mailer = new Mailer();
+                await mailer.sendMail(
+                    shipment.user.email,
+                    'New Offer Received',
+                    template.html
+                );
+            }
             return res.status(StatusCodes.OK).json({ status: 'success' });
         } catch (error) {
             console.log(error);
@@ -120,20 +122,21 @@ class OfferController {
             await this.offerRepository.saveOffer(offer, offer.shipment);
 
             //Send mail
-            const template = offer_template(
-                offer.shipment.user.name,
-                offer.shipment.user.lastname,
-                offer.price,
-                offer.shipment,
-                'Your offer has been accepted !'
-            );
-            const mailer = new Mailer();
-            await mailer.sendMail(
-                offer.shipment.user.email,
-                'Offer Accepted',
-                template.html
-            );
-
+            if (SEND_MAIL) {
+                const template = offer_template(
+                    offer.shipment.user.name,
+                    offer.shipment.user.lastname,
+                    offer.price,
+                    offer.shipment,
+                    'Your offer has been accepted !'
+                );
+                const mailer = new Mailer();
+                await mailer.sendMail(
+                    offer.shipment.user.email,
+                    'Offer Accepted',
+                    template.html
+                );
+            }
             return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
             console.log(error);

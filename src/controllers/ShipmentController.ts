@@ -8,18 +8,21 @@ import Shipment from '../entities/Shipment';
 import { IItem } from '../interfaces/IItem';
 
 import { StatusCodes } from 'http-status-codes';
-import { SHIPMENT_STATE } from '../utils/constants';
+import { SEND_MAIL, SHIPMENT_STATE } from '../utils/constants';
 import basic_template from '../templates/basic_template';
 import Mailer from '../utils/mailer';
 
 import DriverRepository from '../repositories/DriverRepository';
 import ShipmentRepository from '../repositories/ShipmentRepository';
+import OfferRepository from '../repositories/OfferRepository';
 import { validateItem } from '../validations/itemValidator';
 import { validateShipment } from '../validations/shipmentValidator';
+import { validateOffer } from '../validations/offerValidator';
 
 class ShipmentController {
     private shipmentRepository = getCustomRepository(ShipmentRepository);
     private driverRepository = getCustomRepository(DriverRepository);
+    private offerRepository = getCustomRepository(OfferRepository);
 
     public registerShipment = async (
         req: Request,
@@ -152,30 +155,32 @@ class ShipmentController {
             await this.shipmentRepository.save(shipment);
 
             //Send mail
-            //user
-            const template = basic_template(
-                shipment.user.name,
-                shipment.user.lastname,
-                'Shipment Delivered'
-            );
-            const mailer = new Mailer();
-            await mailer.sendMail(
-                shipment.user.email,
-                'You have received your shipment ! please confirm it.',
-                template.html
-            );
+            if (SEND_MAIL) {
+                //user
+                const template = basic_template(
+                    shipment.user.name,
+                    shipment.user.lastname,
+                    'Shipment Delivered'
+                );
+                const mailer = new Mailer();
+                await mailer.sendMail(
+                    shipment.user.email,
+                    'You have received your shipment ! please confirm it.',
+                    template.html
+                );
 
-            //driver
-            const template_2 = basic_template(
-                driver.name,
-                driver.lastname,
-                'You have delivered the shipment succesfully. Wait for the user confirmation'
-            );
-            await mailer.sendMail(
-                shipment.user.email,
-                'Shipment Delivered',
-                template_2.html
-            );
+                //driver
+                const template_2 = basic_template(
+                    driver.name,
+                    driver.lastname,
+                    'You have delivered the shipment succesfully. Wait for the user confirmation'
+                );
+                await mailer.sendMail(
+                    shipment.user.email,
+                    'Shipment Delivered',
+                    template_2.html
+                );
+            }
 
             return res.status(StatusCodes.OK).json('Success');
         } catch (error: unknown) {
@@ -192,7 +197,7 @@ class ShipmentController {
     ): Promise<Response> => {
         try {
             if (!req.user || !req.body.id) {
-                throw new Error('You are missing user or shipment id');
+                throw new Error('You are missing user id, shipment id');
             }
             const shipment = await this.shipmentRepository.findOne({
                 relations: ['user'],
@@ -218,20 +223,37 @@ class ShipmentController {
                 throw new Error('Shipment already received');
             }
             shipment.confirmationDate = new Date();
-            await this.shipmentRepository.save(shipment);
+            const rate = parseInt(req.body.rate, 10);
+            if (rate) {
+                const offer = await this.offerRepository.getConfirmedbyShipment(
+                    shipment
+                );
+                if (offer) {
+                    offer.rate = rate;
+                    if (validateOffer(offer)) {
+                        await this.shipmentRepository.deliverShipment(
+                            shipment,
+                            offer
+                        );
+                    }
+                }
+            } else {
+                await this.shipmentRepository.save(shipment);
+            }
             //Send mail
-            const template = basic_template(
-                shipment.user.name,
-                shipment.user.lastname,
-                'Shipment Reception Confirmed'
-            );
-            const mailer = new Mailer();
-            await mailer.sendMail(
-                shipment.user.email,
-                'You have conmfirmed the reception of your shipment succesfully',
-                template.html
-            );
-
+            if (SEND_MAIL) {
+                const template = basic_template(
+                    shipment.user.name,
+                    shipment.user.lastname,
+                    'Shipment Reception Confirmed'
+                );
+                const mailer = new Mailer();
+                await mailer.sendMail(
+                    shipment.user.email,
+                    'You have conmfirmed the reception of your shipment succesfully',
+                    template.html
+                );
+            }
             return res.status(StatusCodes.OK).json('Success');
         } catch (error: unknown) {
             console.log(error);

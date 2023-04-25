@@ -15,3 +15,5 @@ export const SHIPMENT_STATE = {
 export const DAYS_SINCE_UPDATED = 3;
 
 export const TOKEN_EXPIRATION_TIME = 86400; //1 day
+
+export const SEND_MAIL = false;
