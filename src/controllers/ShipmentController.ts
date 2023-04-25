@@ -149,7 +149,7 @@ class ShipmentController {
                 throw new Error('Shipment already delivered');
             }
             shipment.deliveryDate = new Date();
-            // await this.shipmentRepository.save(shipment);
+            await this.shipmentRepository.save(shipment);
 
             //Send mail
             //user
