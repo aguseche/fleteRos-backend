@@ -26,12 +26,12 @@ export default class ShipmentRepository extends Repository<Shipment> {
         });
     }
 
-    async deliverShipment(shipment: Shipment, offer: Offer): Promise<void> {
-        return this.manager.transaction(async transactionalManager => {
-            await transactionalManager.save(shipment);
-            await transactionalManager.save(offer);
-        });
-    }
+    // async deliverShipment(shipment: Shipment, offer: Offer): Promise<void> {
+    //     return this.manager.transaction(async transactionalManager => {
+    //         await transactionalManager.save(shipment);
+    //         await transactionalManager.save(offer);
+    //     });
+    // }
 
     async getWithDriver(
         id: number,
@@ -58,7 +58,6 @@ export default class ShipmentRepository extends Repository<Shipment> {
             .leftJoinAndSelect('shipment.items', 'items')
             .leftJoin('shipment.offers', 'offers')
             .where('shipment.shipDate >= :now', { now: Date.now() })
-            .andWhere('shipment.confirmationDate IS NULL')
             .andWhere('shipment.state =:state', {
                 state: SHIPMENT_STATE.waiting_offers
             })
@@ -116,7 +115,6 @@ export default class ShipmentRepository extends Repository<Shipment> {
                 user: user,
                 state: SHIPMENT_STATE.confirmed,
                 deliveryDate: Not(null)
-                // confirmationDate: Not(null)
             }
         });
     }

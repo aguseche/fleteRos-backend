@@ -92,7 +92,6 @@ class ShipmentController {
         Devuelve los shipments disponibles para un driver
         Por disponible decimos:
         -shipDate >= hoy
-        -confirmationDate null
         -No fue ofertado por el driver
         */
         const driver = req.user as Driver;
@@ -191,78 +190,74 @@ class ShipmentController {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
-    public receiveShipment = async (
-        req: Request,
-        res: Response
-    ): Promise<Response> => {
-        try {
-            if (!req.user || !req.body.id) {
-                throw new Error('You are missing user id, shipment id');
-            }
-            const shipment = await this.shipmentRepository.findOne({
-                relations: ['user'],
-                where: {
-                    user: req.user,
-                    id: req.body.id
-                }
-            });
-            if (!shipment) {
-                throw new Error('Invalid shipment id');
-            }
-            if (shipment.state !== SHIPMENT_STATE.confirmed) {
-                throw new Error(
-                    'You can not receive a shipment that is not confirmed '
-                );
-            }
-            if (!shipment.deliveryDate) {
-                throw new Error(
-                    'You can not receive a shipment that does not have a delivery date '
-                );
-            }
-            if (shipment.confirmationDate) {
-                throw new Error('Shipment already received');
-            }
-            shipment.confirmationDate = new Date();
-            const rate = parseInt(req.body.rate, 10);
-            if (rate) {
-                const offer = await this.offerRepository.getConfirmedbyShipment(
-                    shipment
-                );
-                if (offer) {
-                    offer.rate = rate;
-                    if (validateOffer(offer)) {
-                        await this.shipmentRepository.deliverShipment(
-                            shipment,
-                            offer
-                        );
-                    }
-                }
-            } else {
-                await this.shipmentRepository.save(shipment);
-            }
-            //Send mail
-            if (SEND_MAIL) {
-                const template = basic_template(
-                    shipment.user.name,
-                    shipment.user.lastname,
-                    'Shipment Reception Confirmed'
-                );
-                const mailer = new Mailer();
-                await mailer.sendMail(
-                    shipment.user.email,
-                    'You have conmfirmed the reception of your shipment succesfully',
-                    template.html
-                );
-            }
-            return res.status(StatusCodes.OK).json('Success');
-        } catch (error: unknown) {
-            console.log(error);
-            if (error instanceof Error) {
-                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
-            }
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
-        }
-    };
+    // public receiveShipment = async (
+    //     req: Request,
+    //     res: Response
+    // ): Promise<Response> => {
+    //     try {
+    //         if (!req.user || !req.body.id) {
+    //             throw new Error('You are missing user id, shipment id');
+    //         }
+    //         const shipment = await this.shipmentRepository.findOne({
+    //             relations: ['user'],
+    //             where: {
+    //                 user: req.user,
+    //                 id: req.body.id
+    //             }
+    //         });
+    //         if (!shipment) {
+    //             throw new Error('Invalid shipment id');
+    //         }
+    //         if (shipment.state !== SHIPMENT_STATE.confirmed) {
+    //             throw new Error(
+    //                 'You can not receive a shipment that is not confirmed '
+    //             );
+    //         }
+    //         if (!shipment.deliveryDate) {
+    //             throw new Error(
+    //                 'You can not receive a shipment that does not have a delivery date '
+    //             );
+    //         }
+    //         const rate = parseInt(req.body.rate, 10);
+    //         if (rate) {
+    //             const offer = await this.offerRepository.getConfirmedbyShipment(
+    //                 shipment
+    //             );
+    //             if (offer) {
+    //                 offer.rate = rate;
+    //                 if (validateOffer(offer)) {
+    //                     await this.shipmentRepository.deliverShipment(
+    //                         shipment,
+    //                         offer
+    //                     );
+    //                 }
+    //             }
+    //         } else {
+    //             await this.shipmentRepository.save(shipment);
+    //         }
+    //         //Send mail
+    //         if (SEND_MAIL) {
+    //             const template = basic_template(
+    //                 shipment.user.name,
+    //                 shipment.user.lastname,
+    //                 'Shipment Reception Confirmed'
+    //             );
+    //             const mailer = new Mailer();
+    //             await mailer.sendMail(
+    //                 shipment.user.email,
+    //                 'You have conmfirmed the reception of your shipment succesfully',
+    //                 template.html
+    //             );
+    //         }
+    //         return res.status(StatusCodes.OK).json('Success');
+    //     } catch (error: unknown) {
+    //         console.log(error);
+    //         if (error instanceof Error) {
+    //             return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+    //         }
+    //         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+    //     }
+    // };
 
     public deleteShipment = async (
         req: Request,

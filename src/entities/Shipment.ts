@@ -30,8 +30,6 @@ export default class Shipment {
     shipDate: Date;
     @Column('timestamp', { name: 'deliveryDate' })
     deliveryDate: Date;
-    @Column('timestamp', { name: 'confirmationDate' })
-    confirmationDate: Date;
     @CreateDateColumn({ name: 'registrationDate', type: 'timestamp' })
     registrationDate!: Date;
 

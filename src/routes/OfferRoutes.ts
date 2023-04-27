@@ -39,6 +39,12 @@ class OfferRoutes {
             driver_validation,
             this.offerController.deleteOffer
         );
+        this.router.put(
+            '/offer/rate',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.offerController.rateOffer
+        );
     }
 }
 
