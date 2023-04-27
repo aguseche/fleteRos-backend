@@ -28,11 +28,6 @@ class ShipmentRoutes {
             user_validation,
             this.shipmentController.updateShipment
         );
-        this.router.get(
-            '/shipment/allActive',
-            passport.authenticate('jwt', { session: false }),
-            this.shipmentController.getAllActive
-        );
         this.router.put(
             '/shipment/delete',
             passport.authenticate('jwt', { session: false }),

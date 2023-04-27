@@ -264,26 +264,6 @@ class ShipmentController {
         }
     };
 
-    public getAllActive = async (
-        req: Request,
-        res: Response
-    ): Promise<Response> => {
-        /* 
-        Devuelve shipments
-        Si es usuario:
-        -No estan cancelados, pertenecen al usuario y deliveryDate es null
-        Si es driver:
-        -Estan confirmados, pertenecen al driver y deliveryDate es null
-        */
-        try {
-            const shipments: Shipment[] =
-                await this.shipmentRepository.getAllActive(req.user);
-            return res.status(StatusCodes.OK).json(shipments);
-        } catch (error) {
-            console.log(error);
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
-        }
-    };
     public deleteShipment = async (
         req: Request,
         res: Response

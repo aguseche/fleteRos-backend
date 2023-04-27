@@ -57,6 +57,12 @@ class driverRouter {
             driver_validation,
             this.driverController.getShipmentsActive
         );
+        this.router.get(
+            '/driver/data',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.getMyData
+        );
     }
 }
 

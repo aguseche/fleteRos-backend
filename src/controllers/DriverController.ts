@@ -12,11 +12,14 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 import registrationEmail from '../templates/registrationEmail';
 import Mailer from '../utils/mailer';
 import { SEND_MAIL } from '../utils/constants';
+import ReportRepository from '../repositories/ReportRepository';
+import { IDriverData } from '../interfaces/IDriverData';
 
 class DriverController {
     private driverRepository = getCustomRepository(DriverRepository);
     private offerRepository = getCustomRepository(OfferRepository);
     private shipmentRepository = getCustomRepository(ShipmentRepository);
+    private reportRepository = getCustomRepository(ReportRepository);
 
     public signUp = async (req: Request, res: Response): Promise<Response> => {
         const newDriver: INewDriver = req.body;
@@ -180,6 +183,104 @@ class DriverController {
                 driver
             );
             return res.status(StatusCodes.OK).json(shipments);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+    public getMyData = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            //Constants
+            const driver = req.user as Driver;
+            const driverData: IDriverData = {
+                shipments_last_week: 0,
+                shipments_last_month: 0,
+                shipments_last_3_months: 0,
+                profit_last_week: 0,
+                profit_last_month: 0,
+                profit_last_3_months: 0,
+                average_rate: 0,
+                total_shipments: 0,
+                total_profit: 0
+            };
+            const aux_currentDate = new Date();
+            const currentDate = aux_currentDate
+                .toISOString()
+                .replace('T', ' ')
+                .slice(0, -5);
+            const oneWeekAgo = new Date(
+                aux_currentDate.getTime() - 7 * 24 * 60 * 60 * 1000
+            )
+                .toISOString()
+                .replace('T', ' ')
+                .slice(0, -5);
+            const oneMonthAgo = new Date(
+                aux_currentDate.getFullYear(),
+                aux_currentDate.getMonth() - 1,
+                aux_currentDate.getDate()
+            )
+                .toISOString()
+                .replace('T', ' ')
+                .slice(0, -5);
+            const threeMonthsAgo = new Date(
+                aux_currentDate.getFullYear(),
+                aux_currentDate.getMonth() - 3,
+                aux_currentDate.getDate()
+            )
+                .toISOString()
+                .replace('T', ' ')
+                .slice(0, -5);
+            //Rate average
+            driverData.average_rate =
+                await this.reportRepository.getAverageRate(driver.id);
+            //Cantidad de viajes finalizados x tiempo
+            driverData.shipments_last_week =
+                await this.reportRepository.getTotalShipmentsWithInterval(
+                    driver.id,
+                    oneWeekAgo,
+                    currentDate
+                );
+            driverData.shipments_last_month =
+                await this.reportRepository.getTotalShipmentsWithInterval(
+                    driver.id,
+                    oneMonthAgo,
+                    currentDate
+                );
+            driverData.shipments_last_3_months =
+                await this.reportRepository.getTotalShipmentsWithInterval(
+                    driver.id,
+                    threeMonthsAgo,
+                    currentDate
+                );
+
+            //Cantidad de plata x tiempo
+            driverData.profit_last_week =
+                await this.reportRepository.getTotalProfitWithInterval(
+                    driver.id,
+                    oneWeekAgo,
+                    currentDate
+                );
+            driverData.profit_last_month =
+                await this.reportRepository.getTotalProfitWithInterval(
+                    driver.id,
+                    oneMonthAgo,
+                    currentDate
+                );
+            driverData.profit_last_3_months =
+                await this.reportRepository.getTotalProfitWithInterval(
+                    driver.id,
+                    threeMonthsAgo,
+                    currentDate
+                );
+            //Cantidad total de viajes finalizados
+            driverData.total_shipments =
+                await this.reportRepository.getTotalShipments(driver.id);
+            //Cantidad total de plata
+            driverData.total_profit =
+                await this.reportRepository.getTotalProfit(driver.id);
+            return res.status(StatusCodes.OK).json(driverData);
         } catch (error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
