@@ -16,6 +16,12 @@ class UserRouter {
             user_validation,
             this.userController.signOut
         );
+        this.router.put(
+            '/user',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.userController.updateUser
+        );
         this.router.get(
             '/user/shipments/waiting_offers',
             passport.authenticate('jwt', { session: false }),

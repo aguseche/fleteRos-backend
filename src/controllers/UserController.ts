@@ -1,12 +1,10 @@
 import { Request, Response } from 'express';
-import { getCustomRepository } from 'typeorm';
+import { getCustomRepository, getMetadataArgsStorage } from 'typeorm';
 import md5 from 'md5';
 
 import UserRepository from '../repositories/UserRepository';
 // import User from '../entities/User';
 import AuthController from './AuthController';
-import { INewUser } from '../interfaces/INewUser';
-import { validateUser } from '../validations/userValidator';
 import { IUserWithoutPassword } from '../interfaces/IUserWithoutPassword';
 import { StatusCodes } from 'http-status-codes';
 import User from '../entities/User';
@@ -14,19 +12,29 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 import Mailer from '../utils/mailer';
 import registrationEmail from '../templates/registrationEmail';
 import { SEND_MAIL } from '../utils/constants';
+import { validateBasicPerson } from '../validations/BasicPersonValidator';
+import { validateBasicUser } from '../validations/basicUserValidator';
+import { validateAttributes } from '../validations/genericValidators/attributesValidator';
 
 class UserController {
     private userRepository = getCustomRepository(UserRepository);
     private shipmentRepository = getCustomRepository(ShipmentRepository);
 
     public signUp = async (req: Request, res: Response): Promise<Response> => {
-        const newUser: INewUser = req.body;
-        if (!validateUser(newUser)) {
-            return res
-                .status(StatusCodes.BAD_REQUEST)
-                .json({ error: 'Please. Send a valid email and password' });
-        }
+        const newUser: User = req.body;
+        const columns = getMetadataArgsStorage()
+            .filterColumns(User)
+            .map(column => column.propertyName)
+            .filter(key => key !== 'id' && key !== 'registrationDate');
+        const keys = Object.keys(newUser);
+
         try {
+            if (!validateAttributes(columns, keys)) {
+                throw new Error(`You must send all the attributes ${columns}`);
+            }
+            if (!validateBasicPerson(newUser) && validateBasicUser(newUser)) {
+                throw new Error('Attributes Invalid');
+            }
             const oldUser = await this.userRepository.findByEmail(
                 newUser.email
             );
@@ -55,15 +63,19 @@ class UserController {
                     template.html
                 );
             }
-            return res.status(StatusCodes.CREATED).json(userWithoutPassword);
-        } catch (error) {
-            throw new Error('Failed to retrieve driver from the database');
+            return res.status(StatusCodes.CREATED).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
 
     public signIn = async (req: Request, res: Response): Promise<Response> => {
-        const loginUser: INewUser = req.body;
-        if (!validateUser(loginUser)) {
+        const loginUser: User = req.body;
+        if (!validateBasicPerson(loginUser)) {
             return res
                 .status(StatusCodes.BAD_REQUEST)
                 .json({ error: 'Email and Password required' });
@@ -101,9 +113,41 @@ class UserController {
         console.log(req);
         return res.status(StatusCodes.OK).json({ msg: 'success' });
     };
+    public updateUser = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const user = req.user as User;
+        const req_user = req.body as User;
+        if (
+            req_user.password ||
+            req_user.email ||
+            req_user.id ||
+            req_user.registrationDate
+        ) {
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('You cant update email or password');
+        }
 
-    public getMe = (req: Request, res: Response): Response => {
-        return res.status(StatusCodes.OK).json(req.user);
+        try {
+            const oldUser = await this.userRepository.findOne(user.id);
+            if (!oldUser) {
+                throw new Error('User does not exist');
+            }
+            this.userRepository.merge(oldUser, req_user);
+            if (!validateBasicUser(oldUser)) {
+                throw new Error('User update incorrect');
+            }
+            await this.userRepository.save(oldUser);
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
     };
 
     public getShipmentsWaitingOffers = async (

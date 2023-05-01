@@ -4,8 +4,7 @@ import md5 from 'md5';
 import AuthController from './AuthController';
 import DriverRepository from '../repositories/DriverRepository';
 import Driver from '../entities/Driver';
-import { INewDriver } from '../interfaces/INewDriver';
-import { validateDriver } from '../validations/driverValidator';
+import { validateBasicDriver } from '../validations/basicDriverValidator';
 import { StatusCodes } from 'http-status-codes';
 import OfferRepository from '../repositories/OfferRepository';
 import ShipmentRepository from '../repositories/ShipmentRepository';
@@ -15,6 +14,10 @@ import { SEND_MAIL } from '../utils/constants';
 import ReportRepository from '../repositories/ReportRepository';
 import { IDriverData } from '../interfaces/IDriverData';
 
+import { getMetadataArgsStorage } from 'typeorm';
+import { validateAttributes } from '../validations/genericValidators/attributesValidator';
+import { validateBasicPerson } from '../validations/BasicPersonValidator';
+
 class DriverController {
     private driverRepository = getCustomRepository(DriverRepository);
     private offerRepository = getCustomRepository(OfferRepository);
@@ -22,35 +25,39 @@ class DriverController {
     private reportRepository = getCustomRepository(ReportRepository);
 
     public signUp = async (req: Request, res: Response): Promise<Response> => {
-        const newDriver: INewDriver = req.body;
-
-        if (!validateDriver(newDriver)) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-                error: 'Please. Send a valid email and password'
-            });
-        }
+        const newDriver: Driver = req.body;
+        const columns = getMetadataArgsStorage()
+            .filterColumns(Driver)
+            .map(column => column.propertyName)
+            .filter(key => key !== 'id' && key !== 'registrationDate');
+        const keys = Object.keys(newDriver);
         try {
+            if (!validateAttributes(columns, keys)) {
+                throw new Error(`You must send all the attributes ${columns}`);
+            }
+            if (
+                !validateBasicDriver(newDriver) &&
+                !validateBasicPerson(newDriver)
+            ) {
+                throw new Error('Attributes Invalid');
+            }
             const oldDriver = await this.driverRepository.findByEmail(
                 newDriver.email
             );
 
             if (oldDriver) {
-                return res
-                    .status(StatusCodes.BAD_REQUEST)
-                    .json({ error: 'Email already exists' });
+                throw new Error('Email already exists');
             }
 
+            //Revisar hash y pasarlo a bycript
             newDriver.password = md5(newDriver.password);
-            await this.driverRepository.save(newDriver);
-            newDriver.password = '';
-
+            const driverWithoutPassword =
+                await this.driverRepository.createDriver(newDriver);
             //Send mail
             if (SEND_MAIL) {
                 const template = registrationEmail(
-                    // newDriver.name,
-                    // newDriver.lastname,
-                    '',
-                    '',
+                    newDriver.name,
+                    newDriver.lastname,
                     'Driver'
                 );
                 const mailer = new Mailer();
@@ -60,19 +67,18 @@ class DriverController {
                     template.html
                 );
             }
-            return res.status(StatusCodes.CREATED).json(newDriver);
-        } catch (error) {
-            throw new Error('Failed to retrieve driver from the database');
+            return res.status(StatusCodes.CREATED).json(driverWithoutPassword);
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
 
     public signIn = async (req: Request, res: Response): Promise<Response> => {
-        const loginDriver: INewDriver = req.body;
-        if (!validateDriver(loginDriver)) {
-            return res
-                .status(StatusCodes.BAD_REQUEST)
-                .json({ error: 'Email and Password required' });
-        }
+        const loginDriver: Driver = req.body;
         try {
             //hay que cambiar esta forma de autenticacion, esta horrible
             const driver = await this.driverRepository.authenticate(
@@ -97,8 +103,44 @@ class DriverController {
         // req.logout();
         return res.status(StatusCodes.OK).json('success');
     };
-    //porque no tengo un getme aca ?
-
+    public updateDriver = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const driver = req.user as Driver;
+        const req_driver = req.body as Driver;
+        if (
+            req_driver.password ||
+            req_driver.email ||
+            req_driver.id ||
+            req_driver.registrationDate
+        ) {
+            return res
+                .status(StatusCodes.BAD_REQUEST)
+                .json('You cant update email or password');
+        }
+        try {
+            const oldDriver = await this.driverRepository.findOne(driver.id);
+            if (!oldDriver) {
+                throw new Error('Driver does not exist');
+            }
+            console.log(oldDriver.password);
+            console.log(req_driver.password);
+            this.driverRepository.merge(oldDriver, req_driver);
+            console.log(oldDriver.password);
+            if (!validateBasicDriver(oldDriver)) {
+                throw new Error('Driver update incorrect');
+            }
+            await this.driverRepository.save(oldDriver);
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
     public getOffersSent = async (
         req: Request,
         res: Response

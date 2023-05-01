@@ -1,6 +1,5 @@
 import { EntityRepository, Repository } from 'typeorm';
 import User from '../entities/User';
-import { INewUser } from '../interfaces/INewUser';
 import { IUserWithoutPassword } from '../interfaces/IUserWithoutPassword';
 
 @EntityRepository(User)
@@ -16,7 +15,7 @@ export default class userRepository extends Repository<User> {
             })
             .getOne();
     }
-    async createUser(user: INewUser): Promise<IUserWithoutPassword> {
+    async createUser(user: User): Promise<IUserWithoutPassword> {
         const savedUser = await this.save(user);
         const { password, ...userWithoutPassword } = savedUser;
         return userWithoutPassword;

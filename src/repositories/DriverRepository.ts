@@ -1,5 +1,6 @@
 import { EntityRepository, Repository } from 'typeorm';
 import Driver from '../entities/Driver';
+import { IDriverWithoutPassword } from '../interfaces/IDriverWithoutPassword';
 
 @EntityRepository(Driver)
 export default class driverRepository extends Repository<Driver> {
@@ -13,5 +14,10 @@ export default class driverRepository extends Repository<Driver> {
                 password
             })
             .getOne();
+    }
+    async createDriver(driver: Driver): Promise<IDriverWithoutPassword> {
+        const savedDriver = await this.save(driver);
+        const { password, ...driverWithoutPassword } = savedDriver;
+        return driverWithoutPassword;
     }
 }
