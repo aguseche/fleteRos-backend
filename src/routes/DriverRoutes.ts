@@ -29,6 +29,12 @@ class driverRouter {
             driver_validation,
             this.driverController.updateDriver
         );
+        this.router.put(
+            '/driver/change_password',
+            passport.authenticate('jwt', { session: false }),
+            driver_validation,
+            this.driverController.updatePassword
+        );
         this.router.get(
             '/driver/offers/sent',
             passport.authenticate('jwt', { session: false }),

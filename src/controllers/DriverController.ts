@@ -169,20 +169,17 @@ class DriverController {
         req: Request,
         res: Response
     ): Promise<Response> => {
-        const user = req.user as Driver;
-        const token = req.body.token;
+        const driver = req.user as Driver;
         const new_password = req.body.password;
         try {
-            // const oldUser = await this.driverRepository.findOne(user.id);
-            // if (!oldUser) {
-            //     throw new Error('User does not exist');
-            // }
-            // //checkear token primero
+            const oldDriver = await this.driverRepository.findOne(driver.id);
+            if (!oldDriver) {
+                throw new Error('Driver does not exist');
+            }
+            //Revisar hash y pasarlo a bycript
+            oldDriver.password = md5(new_password);
 
-            // //Revisar hash y pasarlo a bycript
-            // oldUser.password = md5(new_password);
-
-            // await this.driverRepository.save(oldUser);
+            await this.driverRepository.save(oldDriver);
             return res.status(StatusCodes.OK).json('success');
         } catch (error: unknown) {
             console.log(error);
@@ -230,6 +227,7 @@ class DriverController {
         res: Response
     ): Promise<Response> => {
         const email = req.params.email;
+        const now = new Date();
         try {
             const driver = await this.driverRepository.findOne({ email });
             if (!driver) {
@@ -238,7 +236,7 @@ class DriverController {
             if (driver.isVerified) {
                 throw new Error('Driver already verified');
             }
-            if (new Date() < driver.token_expiration) {
+            if (new Date() < new Date(driver.token_expiration)) {
                 throw new Error('Token not expired');
             }
             const token = AuthController.createToken(
@@ -246,7 +244,6 @@ class DriverController {
                 TOKEN_EMAIL_EXPIRATION_TIME
             );
             driver.token = token;
-            const now = new Date();
             driver.token_expiration = new Date(
                 now.getTime() + TOKEN_EMAIL_EXPIRATION_TIME * 1000
             );

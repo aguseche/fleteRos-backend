@@ -30,11 +30,17 @@ class OfferController {
     ): Promise<Response> => {
         try {
             const driver = req.user as Driver;
+            const offer_id = req.body.id;
+            if (!driver.isVerified || !driver.active) {
+                return res
+                    .status(StatusCodes.UNAUTHORIZED)
+                    .json('Driver not verified');
+            }
+
             //validar que exista el shipment
-            const shipment = await this.shipmentRepository.findOne(
-                req.body.id,
-                { relations: ['user'] }
-            );
+            const shipment = await this.shipmentRepository.findOne(offer_id, {
+                relations: ['user']
+            });
             if (!shipment) {
                 throw new Error('Invalid shipment id');
             }
@@ -95,6 +101,11 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const user = req.user as User;
+        if (!user.isVerified) {
+            return res
+                .status(StatusCodes.UNAUTHORIZED)
+                .json('User not verified');
+        }
         try {
             const offer = await this.offerRepository.findOne({
                 relations: ['shipment', 'shipment.user'],
@@ -151,6 +162,11 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const user = req.user as User;
+        if (!user.isVerified) {
+            return res
+                .status(StatusCodes.UNAUTHORIZED)
+                .json('User not verified');
+        }
         if (!req.user || !req.body.id) {
             throw new Error('You are missing user or offer id');
         }
@@ -193,10 +209,16 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const driver = req.user as Driver;
+        const offer_id = req.body.id;
+        if (!driver.isVerified || !driver.active) {
+            return res
+                .status(StatusCodes.UNAUTHORIZED)
+                .json('Driver not verified');
+        }
         const offer = await this.offerRepository.findOne({
             relations: ['driver'],
             where: {
-                id: req.body.id,
+                id: offer_id,
                 driver: driver
             }
         });
@@ -232,6 +254,11 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const user = req.user as User;
+        if (!user.isVerified) {
+            return res
+                .status(StatusCodes.UNAUTHORIZED)
+                .json('User not verified');
+        }
         try {
             if (!req.user || req.body.rate) {
                 throw new Error('You are missing user or rate');

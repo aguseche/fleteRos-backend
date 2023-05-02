@@ -30,7 +30,11 @@ class ShipmentController {
     ): Promise<Response> => {
         const interfaceItems = req.body.items as IItem[];
         const user = req.user as User;
-
+        if (!user.isVerified) {
+            return res
+                .status(StatusCodes.UNAUTHORIZED)
+                .json('User not verified');
+        }
         if (!interfaceItems || interfaceItems.length === 0) {
             return res
                 .status(StatusCodes.BAD_REQUEST)
@@ -96,9 +100,6 @@ class ShipmentController {
         */
         const driver = req.user as Driver;
         const shipments = await this.shipmentRepository.getAvailable(driver);
-        if (shipments === undefined) {
-            return res.status(StatusCodes.OK).json('No shipments available');
-        }
         return res.status(StatusCodes.OK).json(shipments);
     };
 
@@ -106,11 +107,20 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
+        const user = req.user as User;
+        const shipment = req.body.shipment;
+        const shipment_id = req.body.id;
+
+        if (!user.isVerified) {
+            return res
+                .status(StatusCodes.UNAUTHORIZED)
+                .json('User not verified');
+        }
         const oldShipment = await this.shipmentRepository.findOne({
             relations: ['user'],
             where: {
-                user: req.user,
-                id: req.body.id
+                user: user,
+                id: shipment_id
             }
         });
         if (!oldShipment) {
@@ -119,7 +129,7 @@ class ShipmentController {
                 .json('Invalid shipment id');
         }
         try {
-            this.shipmentRepository.merge(oldShipment, req.body.shipment);
+            this.shipmentRepository.merge(oldShipment, shipment);
             await this.shipmentRepository.save(oldShipment);
             return res.status(StatusCodes.OK).json('Success');
         } catch (error) {
@@ -132,11 +142,17 @@ class ShipmentController {
     ): Promise<Response> => {
         try {
             const driver = req.user as Driver;
+            const shipment_id = req.body.id;
             if (!driver || !req.body.id) {
                 throw new Error('You are missing driver or shipment id');
             }
+            if (!driver.isVerified || !driver.active) {
+                return res
+                    .status(StatusCodes.UNAUTHORIZED)
+                    .json('Driver not verified');
+            }
             const shipment = await this.shipmentRepository.getWithDriver(
-                req.body.id,
+                shipment_id,
                 driver
             );
             if (!shipment) {
@@ -263,12 +279,19 @@ class ShipmentController {
         req: Request,
         res: Response
     ): Promise<Response> => {
+        const user = req.user as User;
+        const shipment_id = req.body.id;
+        if (!user.isVerified) {
+            return res
+                .status(StatusCodes.UNAUTHORIZED)
+                .json('User not verified');
+        }
         try {
             const shipment = await this.shipmentRepository.findOne({
                 relations: ['user'],
                 where: {
-                    user: req.user,
-                    id: req.body.id
+                    user: user,
+                    id: shipment_id
                 }
             });
             if (!shipment) {

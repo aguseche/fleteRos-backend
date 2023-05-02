@@ -52,7 +52,9 @@ class UserController {
             if (!validateBasicPerson(newUser) && validateBasicUser(newUser)) {
                 throw new Error('Attributes Invalid');
             }
-            const oldUser = await this.userRepository.findOne(newUser.email);
+            const oldUser = await this.userRepository.findOne({
+                email: newUser.email
+            });
             if (oldUser) {
                 throw new Error('Email already exists');
             }
@@ -174,19 +176,15 @@ class UserController {
         res: Response
     ): Promise<Response> => {
         const user = req.user as User;
-        const token = req.body.token;
         const new_password = req.body.password;
         try {
-            // const oldUser = await this.userRepository.findOne(user.id);
-            // if (!oldUser) {
-            //     throw new Error('User does not exist');
-            // }
-            // //checkear token primero
-
+            const oldUser = await this.userRepository.findOne(user.id);
+            if (!oldUser) {
+                throw new Error('User does not exist');
+            }
             // //Revisar hash y pasarlo a bycript
-            // oldUser.password = md5(new_password);
-
-            // await this.userRepository.save(oldUser);
+            oldUser.password = md5(new_password);
+            await this.userRepository.save(oldUser);
             return res.status(StatusCodes.OK).json('success');
         } catch (error: unknown) {
             console.log(error);
@@ -242,7 +240,7 @@ class UserController {
             if (user.isVerified) {
                 throw new Error('User already verified');
             }
-            if (new Date() < user.token_expiration) {
+            if (new Date() < new Date(user.token_expiration)) {
                 throw new Error('Token not expired');
             }
             const token = AuthController.createToken(

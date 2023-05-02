@@ -18,7 +18,7 @@ export const TOKEN_EXPIRATION_TIME = 86400; //1 day
 
 export const TOKEN_EMAIL_EXPIRATION_TIME = 3600; //1 hour
 
-export const SEND_MAIL = true;
+export const SEND_MAIL = false;
 
 export const LINK = 'localhost:3000/user/confirm_email/';
 
