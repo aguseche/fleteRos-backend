@@ -1,7 +1,9 @@
+import { URL_IMG } from '../utils/constants';
 const registrationEmail = function (
     name: string | null,
     lastname: string | null,
-    typeUser: string | null
+    typeUser: string | null,
+    link: string | null
 ) {
     const html = `
     <!DOCTYPE html>
@@ -18,7 +20,7 @@ const registrationEmail = function (
                     color: #6c757d;
                 }
                 .background-color {
-                    background-image: url(https://i.ibb.co/7YF8kGZ/ros4.png);
+                    background-image: url(${URL_IMG});
                     background-repeat: no-repeat;
                     background-position: center;
                     background-size: cover;
@@ -39,18 +41,15 @@ const registrationEmail = function (
         <body>
             <div class="background-color">
                 <div class="content">
-                    <h1 class="primary-color" style="margin-bottom: 0"> ${typeUser} Created</h1>
+                    <h1 class="primary-color" style="margin-bottom: 0"> ${typeUser} Creado</h1>
                     <p class="secondary-color" style="margin-top: 0">
-                        Hi, ${name} ${lastname} 
+                        Bienvenido, ${name} ${lastname} !
                     </p>
                     <p class="secondary-color">
-                        Thank you for creating an account in FleteRos.
+                        Gracias por crear una cuenta en FleteRos.
                     </p>
                     <p class="secondary-color">
-                        Your account has been successfully created 
-                    </p>
-                    <p class="secondary-color">
-                        You can now login to our website and start using our services.
+                        Para confirmar tu mail por favor ve a: ${link}
                     </p>
                 </div>
             </div>

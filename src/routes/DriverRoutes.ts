@@ -16,6 +16,14 @@ class driverRouter {
             this.driverController.signOut
         );
         this.router.put(
+            '/driver/confirm_email/:token',
+            this.driverController.confirmEmail
+        );
+        this.router.put(
+            '/driver/resend_token/:email',
+            this.driverController.resendToken
+        );
+        this.router.put(
             '/driver',
             passport.authenticate('jwt', { session: false }),
             driver_validation,

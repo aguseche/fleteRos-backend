@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getCustomRepository } from 'typeorm';
+import { MoreThanOrEqual, getCustomRepository } from 'typeorm';
 import md5 from 'md5';
 import AuthController from './AuthController';
 import DriverRepository from '../repositories/DriverRepository';
@@ -10,7 +10,12 @@ import OfferRepository from '../repositories/OfferRepository';
 import ShipmentRepository from '../repositories/ShipmentRepository';
 import registrationEmail from '../templates/registrationEmail';
 import Mailer from '../utils/mailer';
-import { SEND_MAIL } from '../utils/constants';
+import {
+    SEND_MAIL,
+    TOKEN_EXPIRATION_TIME,
+    TOKEN_EMAIL_EXPIRATION_TIME,
+    LINK
+} from '../utils/constants';
 import ReportRepository from '../repositories/ReportRepository';
 import { IDriverData } from '../interfaces/IDriverData';
 
@@ -29,7 +34,15 @@ class DriverController {
         const columns = getMetadataArgsStorage()
             .filterColumns(Driver)
             .map(column => column.propertyName)
-            .filter(key => key !== 'id' && key !== 'registrationDate');
+            .filter(
+                key =>
+                    key !== 'id' &&
+                    key !== 'registrationDate' &&
+                    key !== 'active' &&
+                    key !== 'token' &&
+                    key !== 'isVerified' &&
+                    key !== 'token_expiration'
+            );
         const keys = Object.keys(newDriver);
         try {
             if (!validateAttributes(columns, keys)) {
@@ -41,33 +54,43 @@ class DriverController {
             ) {
                 throw new Error('Attributes Invalid');
             }
-            const oldDriver = await this.driverRepository.findByEmail(
+            const oldDriver = await this.driverRepository.findOne(
                 newDriver.email
             );
 
             if (oldDriver) {
                 throw new Error('Email already exists');
             }
-
+            const token = AuthController.createToken(
+                newDriver,
+                TOKEN_EMAIL_EXPIRATION_TIME
+            );
             //Revisar hash y pasarlo a bycript
             newDriver.password = md5(newDriver.password);
-            const driverWithoutPassword =
-                await this.driverRepository.createDriver(newDriver);
+
+            newDriver.token = token;
+            const now = new Date();
+            newDriver.token_expiration = new Date(
+                now.getTime() + TOKEN_EMAIL_EXPIRATION_TIME * 1000
+            );
+
+            await this.driverRepository.createDriver(newDriver);
             //Send mail
             if (SEND_MAIL) {
                 const template = registrationEmail(
                     newDriver.name,
                     newDriver.lastname,
-                    'Driver'
+                    'Driver',
+                    LINK + token
                 );
                 const mailer = new Mailer();
                 await mailer.sendMail(
                     newDriver.email,
-                    'Registro Exitoso',
+                    '[FleteRos] Por favor confirma tu direccion de email',
                     template.html
                 );
             }
-            return res.status(StatusCodes.CREATED).json(driverWithoutPassword);
+            return res.status(StatusCodes.CREATED).json('success');
         } catch (error: unknown) {
             console.log(error);
             if (error instanceof Error) {
@@ -92,7 +115,10 @@ class DriverController {
                     .json({ error: 'Email or password incorrect' });
             }
             driver.password = '';
-            const token = AuthController.createToken(driver);
+            const token = AuthController.createToken(
+                driver,
+                TOKEN_EXPIRATION_TIME
+            );
             return res.status(StatusCodes.OK).json({ driver, token });
         } catch (error) {
             console.log(error);
@@ -124,10 +150,7 @@ class DriverController {
             if (!oldDriver) {
                 throw new Error('Driver does not exist');
             }
-            console.log(oldDriver.password);
-            console.log(req_driver.password);
             this.driverRepository.merge(oldDriver, req_driver);
-            console.log(oldDriver.password);
             if (!validateBasicDriver(oldDriver)) {
                 throw new Error('Driver update incorrect');
             }
@@ -141,6 +164,118 @@ class DriverController {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
+
+    public updatePassword = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const user = req.user as Driver;
+        const token = req.body.token;
+        const new_password = req.body.password;
+        try {
+            // const oldUser = await this.driverRepository.findOne(user.id);
+            // if (!oldUser) {
+            //     throw new Error('User does not exist');
+            // }
+            // //checkear token primero
+
+            // //Revisar hash y pasarlo a bycript
+            // oldUser.password = md5(new_password);
+
+            // await this.driverRepository.save(oldUser);
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+
+    public confirmEmail = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const token = req.params.token;
+        if (!token)
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                message: 'We were unable to find a user for this token.'
+            });
+        try {
+            const driver = await this.driverRepository.findOne({
+                token: token,
+                token_expiration: MoreThanOrEqual(new Date())
+            });
+            if (!driver) {
+                throw new Error('Token expired');
+            }
+            if (driver.isVerified) {
+                throw new Error('Driver already verified');
+            }
+            driver.isVerified = true;
+            await this.driverRepository.save(driver);
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+
+    public resendToken = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const email = req.params.email;
+        try {
+            const driver = await this.driverRepository.findOne({ email });
+            if (!driver) {
+                throw new Error('Email not found');
+            }
+            if (driver.isVerified) {
+                throw new Error('Driver already verified');
+            }
+            if (new Date() < driver.token_expiration) {
+                throw new Error('Token not expired');
+            }
+            const token = AuthController.createToken(
+                driver,
+                TOKEN_EMAIL_EXPIRATION_TIME
+            );
+            driver.token = token;
+            const now = new Date();
+            driver.token_expiration = new Date(
+                now.getTime() + TOKEN_EMAIL_EXPIRATION_TIME * 1000
+            );
+            await this.driverRepository.save(driver);
+            //Send mail
+            if (SEND_MAIL) {
+                const template = registrationEmail(
+                    driver.name,
+                    driver.lastname,
+                    'Driver',
+                    LINK + token
+                );
+                const mailer = new Mailer();
+                await mailer.sendMail(
+                    driver.email,
+                    '[FleteRos] Por favor confirma tu direccion de email',
+                    template.html
+                );
+            }
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+
     public getOffersSent = async (
         req: Request,
         res: Response

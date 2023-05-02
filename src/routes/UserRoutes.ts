@@ -17,10 +17,24 @@ class UserRouter {
             this.userController.signOut
         );
         this.router.put(
+            '/user/confirm_email/:token',
+            this.userController.confirmEmail
+        );
+        this.router.put(
+            '/user/resend_token/:email',
+            this.userController.resendToken
+        );
+        this.router.put(
             '/user',
             passport.authenticate('jwt', { session: false }),
             user_validation,
             this.userController.updateUser
+        );
+        this.router.put(
+            '/user/change_password',
+            passport.authenticate('jwt', { session: false }),
+            user_validation,
+            this.userController.updatePassword
         );
         this.router.get(
             '/user/shipments/waiting_offers',

@@ -66,6 +66,18 @@ export default class Driver {
     @Column('varchar', { name: 'greenCard', length: 50, nullable: false })
     greenCard: string;
 
+    @Column('boolean', { name: 'isVerified' })
+    isVerified: boolean;
+
+    @Column('boolean', { name: 'active' })
+    active: boolean;
+
+    @Column('varchar', { name: 'token', length: 100 })
+    token: string;
+
+    @Column('timestamp', { name: 'token_expiration' })
+    token_expiration: Date;
+
     //Relationships
     @OneToMany(() => Vehicle, vehicle => vehicle.driver)
     vehicles: Vehicle[];

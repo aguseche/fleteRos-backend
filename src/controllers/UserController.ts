@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
-import { getCustomRepository, getMetadataArgsStorage } from 'typeorm';
+import {
+    MoreThanOrEqual,
+    getCustomRepository,
+    getMetadataArgsStorage
+} from 'typeorm';
 import md5 from 'md5';
 
 import UserRepository from '../repositories/UserRepository';
@@ -11,7 +15,12 @@ import User from '../entities/User';
 import ShipmentRepository from '../repositories/ShipmentRepository';
 import Mailer from '../utils/mailer';
 import registrationEmail from '../templates/registrationEmail';
-import { SEND_MAIL } from '../utils/constants';
+import {
+    LINK,
+    SEND_MAIL,
+    TOKEN_EMAIL_EXPIRATION_TIME,
+    TOKEN_EXPIRATION_TIME
+} from '../utils/constants';
 import { validateBasicPerson } from '../validations/BasicPersonValidator';
 import { validateBasicUser } from '../validations/basicUserValidator';
 import { validateAttributes } from '../validations/genericValidators/attributesValidator';
@@ -25,7 +34,15 @@ class UserController {
         const columns = getMetadataArgsStorage()
             .filterColumns(User)
             .map(column => column.propertyName)
-            .filter(key => key !== 'id' && key !== 'registrationDate');
+            .filter(
+                key =>
+                    key !== 'id' &&
+                    key !== 'registrationDate' &&
+                    key !== 'active' &&
+                    key !== 'token' &&
+                    key !== 'isVerified' &&
+                    key !== 'token_expiration'
+            );
         const keys = Object.keys(newUser);
 
         try {
@@ -35,31 +52,38 @@ class UserController {
             if (!validateBasicPerson(newUser) && validateBasicUser(newUser)) {
                 throw new Error('Attributes Invalid');
             }
-            const oldUser = await this.userRepository.findByEmail(
-                newUser.email
-            );
+            const oldUser = await this.userRepository.findOne(newUser.email);
             if (oldUser) {
-                return res
-                    .status(StatusCodes.BAD_REQUEST)
-                    .json({ error: 'Email already exists' });
+                throw new Error('Email already exists');
             }
+
+            const token = AuthController.createToken(
+                newUser,
+                TOKEN_EMAIL_EXPIRATION_TIME
+            );
 
             //Revisar hash y pasarlo a bycript
             newUser.password = md5(newUser.password);
 
-            const userWithoutPassword: IUserWithoutPassword =
-                await this.userRepository.createUser(newUser);
+            newUser.token = token;
+            const now = new Date();
+            newUser.token_expiration = new Date(
+                now.getTime() + TOKEN_EMAIL_EXPIRATION_TIME * 1000
+            );
+
+            await this.userRepository.createUser(newUser);
             //Send mail
             if (SEND_MAIL) {
                 const template = registrationEmail(
-                    userWithoutPassword.name,
-                    userWithoutPassword.lastname,
-                    'User'
+                    newUser.name,
+                    newUser.lastname,
+                    'User',
+                    LINK + token
                 );
                 const mailer = new Mailer();
                 await mailer.sendMail(
                     newUser.email,
-                    'Registro Exitoso',
+                    '[FleteRos] Por favor confirma tu direccion de email',
                     template.html
                 );
             }
@@ -94,7 +118,10 @@ class UserController {
             }
 
             user.password = '';
-            const token = AuthController.createToken(user);
+            const token = AuthController.createToken(
+                user,
+                TOKEN_EXPIRATION_TIME
+            );
             return res.status(StatusCodes.OK).json({ user, token });
         } catch (error) {
             console.log(error);
@@ -102,16 +129,8 @@ class UserController {
         }
     };
     public signOut = (req: Request, res: Response): Response => {
-        //esto no desloguea, no borra el token
-        req.logout(function (err) {
-            if (err) {
-                return res
-                    .status(StatusCodes.INTERNAL_SERVER_ERROR)
-                    .json({ msg: 'Error deleting session' });
-            }
-        });
-        console.log(req);
-        return res.status(StatusCodes.OK).json({ msg: 'success' });
+        // req.logout();
+        return res.status(StatusCodes.OK).json('success');
     };
     public updateUser = async (
         req: Request,
@@ -140,6 +159,117 @@ class UserController {
                 throw new Error('User update incorrect');
             }
             await this.userRepository.save(oldUser);
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+
+    public updatePassword = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const user = req.user as User;
+        const token = req.body.token;
+        const new_password = req.body.password;
+        try {
+            // const oldUser = await this.userRepository.findOne(user.id);
+            // if (!oldUser) {
+            //     throw new Error('User does not exist');
+            // }
+            // //checkear token primero
+
+            // //Revisar hash y pasarlo a bycript
+            // oldUser.password = md5(new_password);
+
+            // await this.userRepository.save(oldUser);
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+
+    public confirmEmail = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const token = req.params.token;
+        if (!token)
+            return res.status(StatusCodes.BAD_REQUEST).json({
+                message: 'We were unable to find a user for this token.'
+            });
+        try {
+            const user = await this.userRepository.findOne({
+                token: token,
+                token_expiration: MoreThanOrEqual(new Date())
+            });
+            if (!user) {
+                throw new Error('Token expired');
+            }
+            if (user.isVerified) {
+                throw new Error('User already verified');
+            }
+            user.isVerified = true;
+            await this.userRepository.save(user);
+            return res.status(StatusCodes.OK).json('success');
+        } catch (error: unknown) {
+            console.log(error);
+            if (error instanceof Error) {
+                return res.status(StatusCodes.BAD_REQUEST).json(error.message);
+            }
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+
+    public resendToken = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        const email = req.params.email;
+        try {
+            const user = await this.userRepository.findOne({ email });
+            if (!user) {
+                throw new Error('Email not found');
+            }
+            if (user.isVerified) {
+                throw new Error('User already verified');
+            }
+            if (new Date() < user.token_expiration) {
+                throw new Error('Token not expired');
+            }
+            const token = AuthController.createToken(
+                user,
+                TOKEN_EMAIL_EXPIRATION_TIME
+            );
+            user.token = token;
+            const now = new Date();
+            user.token_expiration = new Date(
+                now.getTime() + TOKEN_EMAIL_EXPIRATION_TIME * 1000
+            );
+            await this.userRepository.save(user);
+            //Send mail
+            if (SEND_MAIL) {
+                const template = registrationEmail(
+                    user.name,
+                    user.lastname,
+                    'User',
+                    LINK + token
+                );
+                const mailer = new Mailer();
+                await mailer.sendMail(
+                    user.email,
+                    '[FleteRos] Por favor confirma tu direccion de email',
+                    template.html
+                );
+            }
             return res.status(StatusCodes.OK).json('success');
         } catch (error: unknown) {
             console.log(error);

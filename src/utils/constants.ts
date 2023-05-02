@@ -16,4 +16,10 @@ export const DAYS_SINCE_UPDATED = 3;
 
 export const TOKEN_EXPIRATION_TIME = 86400; //1 day
 
-export const SEND_MAIL = false;
+export const TOKEN_EMAIL_EXPIRATION_TIME = 3600; //1 hour
+
+export const SEND_MAIL = true;
+
+export const LINK = 'localhost:3000/user/confirm_email/';
+
+export const URL_IMG = 'https://i.ibb.co/7YF8kGZ/ros4.png';

@@ -4,20 +4,26 @@ import Driver from '../entities/Driver';
 import jwt from 'jsonwebtoken';
 
 import { StatusCodes } from 'http-status-codes';
-import { TOKEN_EXPIRATION_TIME } from '../utils/constants';
+import {
+    TOKEN_EMAIL_EXPIRATION_TIME,
+    TOKEN_EXPIRATION_TIME
+} from '../utils/constants';
 class AuthController {
     public getMe = (req: Request, res: Response): Response => {
         return res.status(StatusCodes.OK).json(req.user);
     };
 
-    public static createToken(base_user: Driver | User): string {
+    public static createToken(
+        person: Driver | User,
+        expiration_time: number
+    ): string {
         return jwt.sign(
-            { id: base_user.id, username: base_user.email },
+            { id: person.id, username: person.email },
             process.env.JWTSECRET
                 ? process.env.JWTSECRET
                 : 'BNR8SM&dKn6cIUA#dP%7sF&$oErml5xb',
             {
-                expiresIn: TOKEN_EXPIRATION_TIME
+                expiresIn: expiration_time
             }
         );
     }

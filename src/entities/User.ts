@@ -53,6 +53,15 @@ export default class User {
     @CreateDateColumn({ name: 'registrationDate', type: 'timestamp' })
     registrationDate!: Date;
 
+    @Column('boolean', { name: 'isVerified' })
+    isVerified: boolean;
+
+    @Column('varchar', { name: 'token', length: 100 })
+    token: string;
+
+    @Column('timestamp', { name: 'token_expiration' })
+    token_expiration: Date;
+
     //Relationships
     @OneToMany(() => Shipment, shipment => shipment.user)
     shipments: Shipment[];
