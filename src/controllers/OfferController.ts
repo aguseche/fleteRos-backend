@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { getCustomRepository, IsNull, MoreThan, Not } from 'typeorm';
+import e, { Request, Response } from 'express';
+import { getCustomRepository, In, IsNull, MoreThan, Not } from 'typeorm';
 
 import { StatusCodes } from 'http-status-codes';
 import {
@@ -53,11 +53,14 @@ class OfferController {
                 relations: ['shipment'],
                 where: {
                     shipment: shipment,
-                    driver: driver
+                    driver: driver,
+                    state: In([OFFER_STATE.sent, OFFER_STATE.confirmed])
                 }
             });
             if (oldOffer) {
-                throw new Error('Already have offer');
+                {
+                    throw new Error('Already have offer');
+                }
             }
             //crear offer
             const offer = new Offer();
