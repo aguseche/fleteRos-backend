@@ -7,16 +7,28 @@ export const validateShipment = (
     shipment: Shipment
 ): { valid: boolean; errorMessage?: string } => {
     if (!validateDate(shipment.shipDate)) {
-        return { valid: false, errorMessage: 'Invalid shipment date.' };
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment date: ${shipment.shipDate}`
+        };
     }
     if (!validateLocation(shipment.locationFrom)) {
-        return { valid: false, errorMessage: 'Invalid shipment origin.' };
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment location from: ${shipment.locationFrom}`
+        };
     }
     if (!validateLocation(shipment.locationTo)) {
-        return { valid: false, errorMessage: 'Invalid shipment destination.' };
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment location to: ${shipment.locationTo}`
+        };
     }
     if (!validateState(shipment.state)) {
-        return { valid: false, errorMessage: 'Invalid shipment state.' };
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment state: ${shipment.state}`
+        };
     }
     return { valid: true };
 };
