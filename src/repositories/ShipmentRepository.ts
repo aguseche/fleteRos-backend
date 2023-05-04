@@ -114,7 +114,7 @@ export default class ShipmentRepository extends Repository<Shipment> {
             where: {
                 user: user,
                 state: SHIPMENT_STATE.confirmed,
-                deliveryDate: Not(null)
+                deliveryDate: Not(IsNull())
             }
         });
     }

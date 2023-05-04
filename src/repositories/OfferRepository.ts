@@ -104,7 +104,7 @@ export default class OfferRepository extends Repository<Offer> {
                 state: OFFER_STATE.confirmed,
                 shipment: {
                     state: SHIPMENT_STATE.confirmed,
-                    deliveryDate: Not(null)
+                    deliveryDate: Not(IsNull())
                 }
             }
         });

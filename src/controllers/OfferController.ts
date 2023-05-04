@@ -69,8 +69,9 @@ class OfferController {
             offer.state = OFFER_STATE.sent;
             offer.shipment = shipment;
             //Valida la oferta
-            if (!validateOffer(offer)) {
-                throw new Error('Invalid Offer');
+            const offerValidation = validateOffer(offer);
+            if (!offerValidation.valid) {
+                throw new Error(offerValidation.errorMessage);
             }
             await this.offerRepository.save(offer);
             //Send mail
@@ -130,8 +131,9 @@ class OfferController {
             offer.state = OFFER_STATE.confirmed;
             offer.shipment.state = SHIPMENT_STATE.confirmed;
             //Valida la oferta en general
-            if (!validateOffer(offer)) {
-                throw new Error('Invalid Offer');
+            const offerValidation = validateOffer(offer);
+            if (!offerValidation.valid) {
+                throw new Error(offerValidation.errorMessage);
             }
             await this.offerRepository.saveOffer(offer, offer.shipment);
 
@@ -193,8 +195,9 @@ class OfferController {
             }
             offer.state = OFFER_STATE.cancelled;
             //Valida la oferta en general
-            if (!validateOffer(offer)) {
-                throw new Error('Invalid Offer');
+            const offerValidation = validateOffer(offer);
+            if (!offerValidation.valid) {
+                throw new Error(offerValidation.errorMessage);
             }
             await this.offerRepository.save(offer);
             return res.status(StatusCodes.OK).json('Success');
@@ -238,8 +241,9 @@ class OfferController {
                 throw new Error('Offer State is not sent');
             }
             offer.state = OFFER_STATE.deleted;
-            if (!validateOffer(offer)) {
-                throw new Error('Invalid Offer');
+            const offerValidation = validateOffer(offer);
+            if (!offerValidation.valid) {
+                throw new Error(offerValidation.errorMessage);
             }
             await this.offerRepository.save(offer);
             return res.status(StatusCodes.OK).json('Success');
@@ -285,8 +289,9 @@ class OfferController {
             }
             offer.rate = req.body.rate;
             //Valida la oferta en general
-            if (!validateOffer(offer)) {
-                throw new Error('Invalid Offer');
+            const offerValidation = validateOffer(offer);
+            if (!offerValidation.valid) {
+                throw new Error(offerValidation.errorMessage);
             }
             await this.offerRepository.save(offer);
             return res.status(StatusCodes.OK).json('Success');

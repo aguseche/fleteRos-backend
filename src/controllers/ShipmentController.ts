@@ -62,8 +62,9 @@ class ShipmentController {
                         image_1,
                         image_2
                     });
-                    if (!validateItem(newItem)) {
-                        throw new Error('Invalid Item');
+                    const itemValidation = validateItem(newItem);
+                    if (!itemValidation.valid) {
+                        throw new Error(itemValidation.errorMessage);
                     }
                     return newItem;
                 }
@@ -75,8 +76,9 @@ class ShipmentController {
                 locationFrom: req.body.shipment.locationFrom,
                 locationTo: req.body.shipment.locationTo
             });
-            if (!validateShipment(shipment)) {
-                throw new Error('Invalid Shipment');
+            const shipment_validation = validateShipment(shipment);
+            if (!shipment_validation.valid) {
+                throw new Error(shipment_validation.errorMessage);
             }
             await this.shipmentRepository.registerShipment(shipment, items);
             return res.status(StatusCodes.CREATED).json({ status: 'success' });
