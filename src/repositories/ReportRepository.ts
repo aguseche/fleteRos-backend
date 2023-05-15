@@ -62,13 +62,13 @@ export default class ReportRepository {
         //Returns the total of profit by that driver
         const result = await this.entityManager
             .createQueryBuilder()
-            .select('sum(shipment.distance)', 'total_price')
-            .from(Offer, 'offer')
-            .innerJoinAndSelect(Shipment, 'shipment')
-            .where('offer.idDriver = :idDriver', { idDriver })
-            .andWhere('offer.state = :state', { state: OFFER_STATE.confirmed })
-            .andWhere('shipment.deliveryDate is not null')
-            .groupBy('shipment.id')
+            .select('SUM(o.price)', 'total_price')
+            .from('shipments', 's')
+            .innerJoin('offers', 'o', 'o.idShipment = s.id')
+            .where('o.idDriver = :idDriver', { idDriver })
+            .andWhere('o.state = "CONFIRMED"')
+            .andWhere('s.deliveryDate IS NOT NULL')
+            .groupBy('o.idDriver')
             .getRawOne();
         return parseFloat(result.total_price);
     }
