@@ -131,7 +131,8 @@ class UserController {
         }
     };
     public signOut = (req: Request, res: Response): Response => {
-        // req.logout();
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        req.logout(() => {});
         return res.status(StatusCodes.OK).json('success');
     };
     public updateUser = async (
@@ -152,18 +153,15 @@ class UserController {
         }
 
         try {
-            const oldUser = await this.userRepository.findOne(user.id);
-            if (!oldUser) {
-                throw new Error('User does not exist');
-            }
+            const oldUser = await this.userRepository.findOneOrFail(user.id);
             this.userRepository.merge(oldUser, req_user);
             if (!validateBasicUser(oldUser)) {
-                throw new Error('User update incorrect');
+                throw new Error('User Invalid');
             }
             await this.userRepository.save(oldUser);
-            return res.status(StatusCodes.OK).json('success');
-        } catch (error: unknown) {
-            console.log(error);
+            return res.status(StatusCodes.OK);
+        } catch (error) {
+            console.error(error);
             if (error instanceof Error) {
                 return res.status(StatusCodes.BAD_REQUEST).json(error.message);
             }

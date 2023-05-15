@@ -126,7 +126,8 @@ class DriverController {
         }
     };
     public signOut = async (req: Request, res: Response): Promise<Response> => {
-        // req.logout();
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
+        req.logout(() => {});
         return res.status(StatusCodes.OK).json('success');
     };
     public updateDriver = async (
@@ -377,7 +378,9 @@ class DriverController {
                 profit_last_3_months: 0,
                 average_rate: 0,
                 total_shipments: 0,
-                total_profit: 0
+                total_profit: 0,
+                total_duration: 0,
+                total_distance: 0
             };
             const aux_currentDate = new Date();
             const currentDate = aux_currentDate
@@ -454,6 +457,12 @@ class DriverController {
             //Cantidad total de plata
             driverData.total_profit =
                 await this.reportRepository.getTotalProfit(driver.id);
+            //Cantidad total de distancia
+            driverData.total_distance =
+                await this.reportRepository.getTotalDistance(driver.id);
+            //Cantidad total de duracion
+            driverData.total_duration =
+                await this.reportRepository.getTotalDuration(driver.id);
             return res.status(StatusCodes.OK).json(driverData);
         } catch (error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);

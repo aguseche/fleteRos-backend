@@ -74,7 +74,9 @@ class ShipmentController {
                 state: SHIPMENT_STATE.waiting_offers,
                 shipDate: new Date(req.body.shipment.shipDate),
                 locationFrom: req.body.shipment.locationFrom,
-                locationTo: req.body.shipment.locationTo
+                locationTo: req.body.shipment.locationTo,
+                distance: req.body.shipment.distance,
+                duration: req.body.shipment.duration
             });
             const shipment_validation = validateShipment(shipment);
             if (!shipment_validation.valid) {

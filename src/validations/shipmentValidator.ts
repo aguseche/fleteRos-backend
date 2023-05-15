@@ -3,6 +3,8 @@ import { validateDate } from './genericValidators/validateDate';
 import { validateDescription } from './genericValidators/descriptionValidator';
 import { validateLocation } from './shipmentValidator/locationValidator';
 import { validateState } from './shipmentValidator/stateValidator';
+import { validateDuration } from './shipmentValidator/durationValidator';
+import { validateDistance } from './shipmentValidator/distanceValidator';
 export const validateShipment = (
     shipment: Shipment
 ): { valid: boolean; errorMessage?: string } => {
@@ -28,6 +30,18 @@ export const validateShipment = (
         return {
             valid: false,
             errorMessage: `Invalid shipment state: ${shipment.state}`
+        };
+    }
+    if (!validateDuration(shipment.duration)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment duration: ${shipment.duration}`
+        };
+    }
+    if (!validateDistance(shipment.distance)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment distance: ${shipment.distance}`
         };
     }
     return { valid: true };

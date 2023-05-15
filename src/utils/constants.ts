@@ -22,4 +22,4 @@ export const SEND_MAIL = false;
 
 export const LINK = 'localhost:3000/user/confirm_email/';
 
-export const URL_IMG = 'https://i.ibb.co/7YF8kGZ/ros4.png';
+export const URL_IMG = 'https://i.ibb.co/1Z32m2t/ros4.png';

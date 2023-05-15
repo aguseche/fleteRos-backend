@@ -62,7 +62,7 @@ export default class ReportRepository {
         //Returns the total of profit by that driver
         const result = await this.entityManager
             .createQueryBuilder()
-            .select('sum(offer.price)', 'total_price')
+            .select('sum(shipment.distance)', 'total_price')
             .from(Offer, 'offer')
             .innerJoinAndSelect(Shipment, 'shipment')
             .where('offer.idDriver = :idDriver', { idDriver })
@@ -71,6 +71,36 @@ export default class ReportRepository {
             .groupBy('shipment.id')
             .getRawOne();
         return parseFloat(result.total_price);
+    }
+    async getTotalDistance(idDriver: number): Promise<number> {
+        //Receives a driver
+        //Returns the total of distance by that driver
+        const result = await this.entityManager
+            .createQueryBuilder()
+            .select('sum(offer.price)', 'total_distance')
+            .from(Offer, 'offer')
+            .innerJoinAndSelect(Shipment, 'shipment')
+            .where('offer.idDriver = :idDriver', { idDriver })
+            .andWhere('offer.state = :state', { state: OFFER_STATE.confirmed })
+            .andWhere('shipment.deliveryDate is not null')
+            .groupBy('shipment.id')
+            .getRawOne();
+        return parseFloat(result.total_distance);
+    }
+    async getTotalDuration(idDriver: number): Promise<number> {
+        //Receives a driver
+        //Returns the total of duration by that driver
+        const result = await this.entityManager
+            .createQueryBuilder()
+            .select('sum(offer.price)', 'total_duration')
+            .from(Offer, 'offer')
+            .innerJoinAndSelect(Shipment, 'shipment')
+            .where('offer.idDriver = :idDriver', { idDriver })
+            .andWhere('offer.state = :state', { state: OFFER_STATE.confirmed })
+            .andWhere('shipment.deliveryDate is not null')
+            .groupBy('shipment.id')
+            .getRawOne();
+        return parseFloat(result.total_duration);
     }
     async getTotalProfitWithInterval(
         idDriver: number,

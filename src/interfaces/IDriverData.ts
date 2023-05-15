@@ -8,4 +8,6 @@ export interface IDriverData {
     average_rate: number;
     total_shipments: number;
     total_profit: number;
+    total_duration: number;
+    total_distance: number;
 }
