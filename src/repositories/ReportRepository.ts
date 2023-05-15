@@ -77,14 +77,15 @@ export default class ReportRepository {
         //Returns the total of distance by that driver
         const result = await this.entityManager
             .createQueryBuilder()
-            .select('sum(offer.price)', 'total_distance')
-            .from(Offer, 'offer')
-            .innerJoinAndSelect(Shipment, 'shipment')
-            .where('offer.idDriver = :idDriver', { idDriver })
-            .andWhere('offer.state = :state', { state: OFFER_STATE.confirmed })
-            .andWhere('shipment.deliveryDate is not null')
-            .groupBy('shipment.id')
+            .select('SUM(s.distance)', 'total_distance')
+            .from('shipments', 's')
+            .innerJoin('offers', 'o', 'o.idShipment = s.id')
+            .where('o.idDriver = :idDriver', { idDriver })
+            .andWhere('o.state = "CONFIRMED"')
+            .andWhere('s.deliveryDate IS NOT NULL')
+            .groupBy('o.idDriver')
             .getRawOne();
+        console.log(result.total_distance);
         return parseFloat(result.total_distance);
     }
     async getTotalDuration(idDriver: number): Promise<number> {
@@ -92,14 +93,15 @@ export default class ReportRepository {
         //Returns the total of duration by that driver
         const result = await this.entityManager
             .createQueryBuilder()
-            .select('sum(offer.price)', 'total_duration')
-            .from(Offer, 'offer')
-            .innerJoinAndSelect(Shipment, 'shipment')
-            .where('offer.idDriver = :idDriver', { idDriver })
-            .andWhere('offer.state = :state', { state: OFFER_STATE.confirmed })
-            .andWhere('shipment.deliveryDate is not null')
-            .groupBy('shipment.id')
+            .select('SUM(s.duration)', 'total_duration')
+            .from('shipments', 's')
+            .innerJoin('offers', 'o', 'o.idShipment = s.id')
+            .where('o.idDriver = :idDriver', { idDriver })
+            .andWhere('o.state = "CONFIRMED"')
+            .andWhere('s.deliveryDate IS NOT NULL')
+            .groupBy('o.idDriver')
             .getRawOne();
+        console.log(result.total_duration);
         return parseFloat(result.total_duration);
     }
     async getTotalProfitWithInterval(
