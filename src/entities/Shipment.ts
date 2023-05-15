@@ -36,6 +36,8 @@ export default class Shipment {
     distance: number;
     @Column({ type: 'int', name: 'duration' })
     duration: number;
+    @Column({ name: 'delivery_shift', length: 1 })
+    delivery_shift: string;
 
     //Relationships
     @ManyToOne(() => User, {

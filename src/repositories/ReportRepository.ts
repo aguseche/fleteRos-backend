@@ -85,7 +85,6 @@ export default class ReportRepository {
             .andWhere('s.deliveryDate IS NOT NULL')
             .groupBy('o.idDriver')
             .getRawOne();
-        console.log(result.total_distance);
         return parseFloat(result.total_distance);
     }
     async getTotalDuration(idDriver: number): Promise<number> {
@@ -101,7 +100,6 @@ export default class ReportRepository {
             .andWhere('s.deliveryDate IS NOT NULL')
             .groupBy('o.idDriver')
             .getRawOne();
-        console.log(result.total_duration);
         return parseFloat(result.total_duration);
     }
     async getTotalProfitWithInterval(

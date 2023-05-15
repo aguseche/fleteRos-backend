@@ -5,6 +5,7 @@ import { validateLocation } from './shipmentValidator/locationValidator';
 import { validateState } from './shipmentValidator/stateValidator';
 import { validateDuration } from './shipmentValidator/durationValidator';
 import { validateDistance } from './shipmentValidator/distanceValidator';
+import { validateDeliveryShift } from './shipmentValidator/delivery_shiftValidator';
 export const validateShipment = (
     shipment: Shipment
 ): { valid: boolean; errorMessage?: string } => {
@@ -42,6 +43,12 @@ export const validateShipment = (
         return {
             valid: false,
             errorMessage: `Invalid shipment distance: ${shipment.distance}`
+        };
+    }
+    if (!validateDeliveryShift(shipment.delivery_shift)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment delivery_shift: ${shipment.delivery_shift}`
         };
     }
     return { valid: true };

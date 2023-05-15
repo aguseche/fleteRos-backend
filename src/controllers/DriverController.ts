@@ -463,7 +463,6 @@ class DriverController {
             //Cantidad total de duracion
             driverData.total_duration =
                 await this.reportRepository.getTotalDuration(driver.id);
-            console.log(driverData);
             return res.status(StatusCodes.OK).json(driverData);
         } catch (error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);

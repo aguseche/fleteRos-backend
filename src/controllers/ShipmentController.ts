@@ -73,6 +73,7 @@ class ShipmentController {
                 user,
                 state: SHIPMENT_STATE.waiting_offers,
                 shipDate: new Date(req.body.shipment.shipDate),
+                delivery_shift: req.body.shipment.delivery_shift,
                 locationFrom: req.body.shipment.locationFrom,
                 locationTo: req.body.shipment.locationTo,
                 distance: req.body.shipment.distance,
