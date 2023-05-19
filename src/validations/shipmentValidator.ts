@@ -3,11 +3,53 @@ import { validateDate } from './genericValidators/validateDate';
 import { validateDescription } from './genericValidators/descriptionValidator';
 import { validateLocation } from './shipmentValidator/locationValidator';
 import { validateState } from './shipmentValidator/stateValidator';
-export const validateShipment = (shipment: Shipment): boolean => {
-    return (
-        validateDate(shipment.shipDate) &&
-        validateLocation(shipment.locationFrom) &&
-        validateLocation(shipment.locationTo) &&
-        validateState(shipment.state)
-    );
+import { validateDuration } from './shipmentValidator/durationValidator';
+import { validateDistance } from './shipmentValidator/distanceValidator';
+import { validateDeliveryShift } from './shipmentValidator/delivery_shiftValidator';
+export const validateShipment = (
+    shipment: Shipment
+): { valid: boolean; errorMessage?: string } => {
+    if (!validateDate(shipment.shipDate)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment date: ${shipment.shipDate}`
+        };
+    }
+    if (!validateLocation(shipment.locationFrom)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment location from: ${shipment.locationFrom}`
+        };
+    }
+    if (!validateLocation(shipment.locationTo)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment location to: ${shipment.locationTo}`
+        };
+    }
+    if (!validateState(shipment.state)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment state: ${shipment.state}`
+        };
+    }
+    if (!validateDuration(shipment.duration)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment duration: ${shipment.duration}`
+        };
+    }
+    if (!validateDistance(shipment.distance)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment distance: ${shipment.distance}`
+        };
+    }
+    if (!validateDeliveryShift(shipment.delivery_shift)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid shipment delivery_shift: ${shipment.delivery_shift}`
+        };
+    }
+    return { valid: true };
 };

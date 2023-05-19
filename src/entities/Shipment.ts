@@ -30,10 +30,14 @@ export default class Shipment {
     shipDate: Date;
     @Column('timestamp', { name: 'deliveryDate' })
     deliveryDate: Date;
-    @Column('timestamp', { name: 'confirmationDate' })
-    confirmationDate: Date;
     @CreateDateColumn({ name: 'registrationDate', type: 'timestamp' })
     registrationDate!: Date;
+    @Column({ type: 'int', name: 'distance' })
+    distance: number;
+    @Column({ type: 'int', name: 'duration' })
+    duration: number;
+    @Column({ name: 'delivery_shift', length: 1 })
+    delivery_shift: string;
 
     //Relationships
     @ManyToOne(() => User, {

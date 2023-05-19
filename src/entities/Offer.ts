@@ -26,6 +26,9 @@ export default class Offer {
     @Column({ name: 'state', length: 50 })
     state: string;
 
+    @Column({ type: 'int', name: 'rate' })
+    rate: number;
+
     //Relationships
     @ManyToOne(() => Driver, {
         onUpdate: 'CASCADE',

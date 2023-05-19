@@ -1,5 +1,27 @@
 import Offer from '../entities/Offer';
 import { validatePrice } from './offerValidators/priceValidator';
-export const validateOffer = (offer: Offer): boolean => {
-    return validatePrice(offer.price);
+import { validateState } from './offerValidators/stateValidator';
+import { validateRate } from './offerValidators/rateValidator';
+export const validateOffer = (
+    offer: Offer
+): { valid: boolean; errorMessage?: string } => {
+    if (!validatePrice(offer.price)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid offer price: ${offer.price}`
+        };
+    }
+    if (!validateState(offer.state)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid offer state: ${offer.state}`
+        };
+    }
+    if (!validateRate(offer.rate)) {
+        return {
+            valid: false,
+            errorMessage: `Invalid offer rate: ${offer.rate}`
+        };
+    }
+    return { valid: true };
 };
