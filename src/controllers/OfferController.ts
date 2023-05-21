@@ -261,19 +261,23 @@ class OfferController {
         res: Response
     ): Promise<Response> => {
         const user = req.user as User;
+        const rate = req.body.rate;
+        const idOffer = req.body.id;
+        console.log(rate);
+        console.log(idOffer);
         if (!user.isVerified) {
             return res
                 .status(StatusCodes.UNAUTHORIZED)
                 .json('User not verified');
         }
         try {
-            if (!req.user || req.body.rate) {
+            if (!rate) {
                 throw new Error('You are missing user or rate');
             }
             const offer = await this.offerRepository.findOne({
                 relations: ['shipment', 'shipment.user'],
                 where: {
-                    id: req.body.id,
+                    id: idOffer,
                     shipment: {
                         user: user
                     }
