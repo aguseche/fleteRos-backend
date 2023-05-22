@@ -287,32 +287,33 @@ class UserController {
             const shipments = await this.shipmentRepository.getWaitingOffers(
                 user
             );
-            interface DriverRates {
-                [driverId: number]: {
-                    rate: number;
-                };
-            }
-            const driver_rates: DriverRates = {};
-            await Promise.all(
-                shipments.map(async item => {
-                    await Promise.all(
-                        item.offers.map(async offer => {
-                            const driverId = offer.driver.id;
-                            const averageRate =
-                                await this.reportRepository.getAverageRate(
-                                    driverId
-                                );
+            // interface DriverRates {
+            //     [driverId: number]: {
+            //         rate: number;
+            //     };
+            // }
+            // const driver_rates: DriverRates = {};
+            // await Promise.all(
+            //     shipments.map(async item => {
+            //         await Promise.all(
+            //             item.offers.map(async offer => {
+            //                 const driverId = offer.driver.id;
+            //                 const averageRate =
+            //                     await this.reportRepository.getAverageRate(
+            //                         driverId
+            //                     );
 
-                            if (!(driverId in driver_rates)) {
-                                driver_rates[driverId] = {
-                                    rate: averageRate
-                                };
-                            }
-                        })
-                    );
-                })
-            );
-            return res.status(StatusCodes.OK).json({ shipments, driver_rates });
+            //                 if (!(driverId in driver_rates)) {
+            //                     driver_rates[driverId] = {
+            //                         rate: averageRate
+            //                     };
+            //                 }
+            //             })
+            //         );
+            //     })
+            // );
+            // return res.status(StatusCodes.OK).json({ shipments, driver_rates });
+            return res.status(StatusCodes.OK).json(shipments);
         } catch (error) {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
