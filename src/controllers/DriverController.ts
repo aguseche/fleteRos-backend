@@ -362,6 +362,25 @@ class DriverController {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
         }
     };
+
+    public getAverageRate = async (
+        req: Request,
+        res: Response
+    ): Promise<Response> => {
+        try {
+            const idDriver = req.body.id;
+            if (!idDriver) {
+                throw new Error('Driver id missing');
+            }
+            const average_rate = await this.reportRepository.getAverageRate(
+                idDriver
+            );
+            return res.status(StatusCodes.OK).json(average_rate);
+        } catch (error) {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error);
+        }
+    };
+
     public getMyData = async (
         req: Request,
         res: Response
