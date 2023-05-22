@@ -4,5 +4,5 @@ export const validateDuration = (
     if (duration === null || duration === undefined) {
         return true;
     }
-    return duration >= 0 && duration <= 1000;
+    return duration >= 0 && duration <= 1000000;
 };
