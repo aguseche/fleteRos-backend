@@ -14,7 +14,7 @@ import {
     SEND_MAIL,
     TOKEN_EXPIRATION_TIME,
     TOKEN_EMAIL_EXPIRATION_TIME,
-    LINK
+    LINK_DRIVER
 } from '../utils/constants';
 import ReportRepository from '../repositories/ReportRepository';
 import { IDriverData } from '../interfaces/IDriverData';
@@ -81,7 +81,7 @@ class DriverController {
                     newDriver.name,
                     newDriver.lastname,
                     'Driver',
-                    LINK + token
+                    LINK_DRIVER + token
                 );
                 const mailer = new Mailer();
                 await mailer.sendMail(
@@ -255,7 +255,7 @@ class DriverController {
                     driver.name,
                     driver.lastname,
                     'Driver',
-                    LINK + token
+                    LINK_DRIVER + token
                 );
                 const mailer = new Mailer();
                 await mailer.sendMail(

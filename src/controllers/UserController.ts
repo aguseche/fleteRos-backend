@@ -16,7 +16,7 @@ import ShipmentRepository from '../repositories/ShipmentRepository';
 import Mailer from '../utils/mailer';
 import registrationEmail from '../templates/registrationEmail';
 import {
-    LINK,
+    LINK_USER,
     SEND_MAIL,
     TOKEN_EMAIL_EXPIRATION_TIME,
     TOKEN_EXPIRATION_TIME
@@ -82,7 +82,7 @@ class UserController {
                     newUser.name,
                     newUser.lastname,
                     'User',
-                    LINK + token
+                    LINK_USER + token
                 );
                 const mailer = new Mailer();
                 await mailer.sendMail(
@@ -200,6 +200,7 @@ class UserController {
         res: Response
     ): Promise<Response> => {
         const token = req.params.token;
+        console.log(token);
         if (!token)
             return res.status(StatusCodes.BAD_REQUEST).json({
                 message: 'We were unable to find a user for this token.'
@@ -209,6 +210,7 @@ class UserController {
                 token: token,
                 token_expiration: MoreThanOrEqual(new Date())
             });
+            console.log(user);
             if (!user) {
                 throw new Error('Token expired');
             }
@@ -259,7 +261,7 @@ class UserController {
                     user.name,
                     user.lastname,
                     'User',
-                    LINK + token
+                    LINK_USER + token
                 );
                 const mailer = new Mailer();
                 await mailer.sendMail(
