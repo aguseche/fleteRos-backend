@@ -83,7 +83,7 @@ class driverRouter {
             driver_validation,
             this.driverController.getMyData
         );
-        this.router.get(
+        this.router.post(
             '/driver/rate',
             passport.authenticate('jwt', { session: false }),
             this.driverController.getAverageRate
