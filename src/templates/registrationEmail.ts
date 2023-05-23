@@ -49,7 +49,7 @@ const registrationEmail = function (
                         Gracias por crear una cuenta en FleteRos.
                     </p>
                     <p class="secondary-color">
-                        Para confirmar tu mail por favor ve a: ${link}
+                        Para confirmar tu mail por favor ve a: <a href=${link}>Click Aqui</a>
                     </p>
                 </div>
             </div>
