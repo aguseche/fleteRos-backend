@@ -41,15 +41,15 @@ const registrationEmail = function (
         <body>
             <div class="background-color">
                 <div class="content">
-                    <h1 class="primary-color" style="margin-bottom: 0"> Shipment delivered !!!</h1>
+                    <h1 class="primary-color" style="margin-bottom: 0"> Viaje finalizado !!!</h1>
                     <p class="secondary-color" style="margin-top: 0">
-                        Hi, ${name} ${lastname} 
+                        Hola, ${name} ${lastname} 
                     </p>
                     <p class="secondary-color">
                         ${text}
                     </p>
                     <p class="secondary-color">
-                        To check all your details log into your account
+                        Para ver todos los detalles logueate en tu cuenta
                     </p>
                 </div>
             </div>

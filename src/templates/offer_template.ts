@@ -43,29 +43,29 @@ const registrationEmail = function (
         <body>
             <div class="background-color">
                 <div class="content">
-                    <h1 class="primary-color" style="margin-bottom: 0"> New Offer Received !!!</h1>
+                    <h1 class="primary-color" style="margin-bottom: 0"> Nueva oferta recibida !!!</h1>
                     <p class="secondary-color" style="margin-top: 0">
-                        Hi, ${name} ${lastname} 
+                        Hola, ${name} ${lastname} 
                     </p>
                     <p class="secondary-color">
                         ${text}
                     </p>
                     <p class="primary-color">
-                        The offer is: <b>${price}</b> for the shipment be delivered.
+                        La oferta es: <b>${price}</b> por el viaje a realizar.
                     </p>
                     <p class="secondary-color">
-                        This is the shipment information:
+                        Esta es la informacion de la entrega:
                     </p>
                     <p class="secondary-color">
-                        Location From: ${shipment.locationFrom}
+                        Localizacion desde: ${shipment.locationFrom}
                     </p>
                     <p class="secondary-color">    
-                        Location To: ${shipment.locationTo}
+                        Localizacion hasta: ${shipment.locationTo}
                     </p>
-                        Date of shipment: ${shipment.shipDate}
+                        Fecha de entrega: ${shipment.shipDate}
                     </p>
                     <p class="secondary-color">
-                        To check all your details log into your account
+                        Para ver todos los detalles logueate en tu cuenta
                     </p>
                 </div>
             </div>
